@@ -13,6 +13,13 @@ return new class extends Migration
     {
         Schema::create('areas', function (Blueprint $table) {
             $table->id();
+            $table->string('area')->nullable();
+            $table->string('curso')->nullable();
+            $table->string('fecha')->nullable();
+            $table->string('lugar')->nullable();
+            $table->string('modalidad')->nullable();
+            $table->string('inscripcion')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }
