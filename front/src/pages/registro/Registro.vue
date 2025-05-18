@@ -22,7 +22,7 @@
             F.N.I.
           </div>
         </div>
-        <div class="col-2 col-md-2">
+        <div class="col-2 col-md-2 flex flex-center">
           <q-img src="logo_fni.png" style="width: 50px" />
         </div>
         <div class="col-12 col-md-1"></div>
@@ -38,8 +38,75 @@
 <!--        CIENCIA Y TECNOLOGÍA-->
 <!--        F.N.I.-->
 <!--      </div>-->
-      <q-page class="bg-grey-3">
-<!--        <pre>{{areas}}</pre>-->
+      <q-page class="bg-grey-3 q-pa-md">
+        <div class="row">
+          <div class="col-12 col-md-3"></div>
+          <div class="col-12 col-md-6">
+            <label class="text-bold">Selecione su area</label>
+<!--            option-label="area"-->
+<!--            option-value="id"-->
+            <q-select
+                filled
+                v-model="area"
+                :options="areas"
+                emit-value
+                dense
+                option-label="area"
+                @update:modelValue="getCursos"
+                map-options
+                class="q-mb-md"/>
+            <label class="text-bold">Selecione su curso</label>
+<!--            option-label="curso"-->
+<!--            option-value="id"-->
+            <q-select
+                filled
+                v-model="curso"
+                :options="cursos"
+                emit-value
+                dense
+                option-label="curso"
+                map-options
+                class="q-mb-md"/>
+            <template v-if="area.curso == 'Categoría A: Programación. Nivel Básico.: 3ro, 4to o 5to de secundaria. Categoría B: Programación. Nivel Avanzado: 6to de secundaria Warm Up: Martes 21 de octubre. Horas: 14:30 Competencia: Miércoles 22 de octubre. Horas: 09:00'">
+              <label class="text-bold">Selecione su categoria</label>
+              <q-select
+                  filled
+                  v-model="categoria"
+                  :options="categorias"
+                  emit-value
+                  dense
+                  option-label="categoria"
+                  map-options
+                  class="q-mb-md"/>
+            </template>
+            <template v-if="area.curso == 'Nivel 1: Estudiantes hasta 2° de secundaria. Nivel 2: Estudiantes de 3° y 4° de secundaria. Nivel 3: Estudiantes de 5° y 6° de secundaria. Registro Viernes 24 de octubre de horas 14:30 a 15:30 Prueba Viernes 24 de octubre Desde horas 15:30 a 18:00'">
+              <label class="text-bold">Selecione su categoria</label>
+              <q-select
+                  filled
+                  v-model="categoria"
+                  :options="categorias"
+                  emit-value
+                  dense
+                  option-label="categoria"
+                  map-options
+                  class="q-mb-md"/>
+            </template>
+            <template v-if="area.curso == 'Categoría A 1º a 3º de secundaria. Categoría B 4º a 6º de secundaria Competencia Categoría A Domingo 26 de octubre. Horas: 9:00 am. Categoría B Domingo 26 de octubre. Horas: 14:00'">
+              <label class="text-bold">Selecione su categoria</label>
+              <q-select
+                  filled
+                  v-model="categoria"
+                  :options="categorias"
+                  emit-value
+                  dense
+                  option-label="categoria"
+                  map-options
+                  class="q-mb-md"/>
+            </template>
+          </div>
+          <div class="col-12 col-md-3"></div>
+        </div>
+        <pre>{{areas}}</pre>
 <!--        [-->
 <!--        {-->
 <!--        "id": 1,-->
@@ -160,7 +227,13 @@ export default {
   data(){
     return {
       areas:[],
-      area: {}
+      area: '',
+      cursos: [],
+      curso: '',
+      categorias: [],
+      categoria: '',
+      nivels: [],
+      nivel: '',
     }
   },
   mounted() {
@@ -168,13 +241,99 @@ export default {
   },
   methods:{
     getAreas(){
-      this.$axios.get('/areas')
-        .then(response => {
+      this.$axios.get('/areas').then(response => {
           this.areas = response.data
-        })
-        .catch(error => {
+        }).catch(error => {
           console.error('Error fetching areas:', error)
         })
+    },
+    getCursos(){
+      // const areaSeleccionada = this.areas.find(area => area.id === this.area)
+      this.curso = ''
+      this.categoria = ''
+      this.nivel = ''
+      if (this.area.area == 'QUÍMICA' || this.area.area == 'MATEMÁTICA' || this.area.area == 'BIOLOGÍA' || this.area.area == 'FÍSICA' || this.area.area == 'GEOGRAFÍA' || this.area.area == 'ASTRONOMÍA y ASTROFÍSICA' || this.area.area == 'ENERGÍAS'){
+        this.cursos=[
+          {id: 1, curso: '1º de Secundaria'},
+          {id: 2, curso: '2º de Secundaria'},
+          {id: 3, curso: '3º de Secundaria'},
+          {id: 4, curso: '4º de Secundaria'},
+          {id: 5, curso: '5º de Secundaria'},
+          {id: 6, curso: '6º de Secundaria'}
+        ]
+      }
+      else if ( this.area.area == 'MEDIO AMBIENTE' || this.area.area == 'REDES Y CIBERSEGURIDAD' || this.area.area == 'ROBÓTICA' || this.area.area == 'DISEÑADORES Y FABRICADORES'){
+        this.cursos=[
+          {id: 1, curso: '1º de Secundaria'},
+          {id: 2, curso: '2º de Secundaria'},
+          {id: 3, curso: '3º de Secundaria'},
+          {id: 4, curso: '4º de Secundaria'},
+          {id: 5, curso: '5º de Secundaria'},
+          {id: 6, curso: '6º de Secundaria'}
+        ]
+      }
+      // else if (this.area.curso == '5º y 6º de Secundaria.'){
+      //   this.cursos=[
+      //     {id: 1, curso: '5º de Secundaria'},
+      //     {id: 2, curso: '6º de Secundaria'}
+      //   ]
+      // }else if (this.area.curso == 'De 3º a 6º de Secundaria.'){
+      //   this.cursos=[
+      //     {id: 1, curso: '3º de Secundaria'},
+      //     {id: 2, curso: '4º de Secundaria'},
+      //     {id: 3, curso: '5º de Secundaria'},
+      //     {id: 4, curso: '6º de Secundaria'}
+      //   ]
+      // }else if (this.area.curso == 'De 3º a 6º de Secundaria.'){
+      //   this.cursos=[
+      //     {id: 1, curso: '3º de Secundaria'},
+      //     {id: 2, curso: '4º de Secundaria'},
+      //     {id: 3, curso: '5º de Secundaria'},
+      //     {id: 4, curso: '6º de Secundaria'}
+      //   ]
+      // }else if(this.area.curso == 'Categoría A: Programación. Nivel Básico.: 3ro, 4to o 5to de secundaria. Categoría B: Programación. Nivel Avanzado: 6to de secundaria Warm Up: Martes 21 de octubre. Horas: 14:30 Competencia: Miércoles 22 de octubre. Horas: 09:00'){
+      //   this.cursos=[
+      //     {id: 1, curso: '3º de Secundaria'},
+      //     {id: 2, curso: '4º de Secundaria'},
+      //     {id: 3, curso: '5º de Secundaria'},
+      //     {id: 4, curso: '6º de Secundaria'}
+      //   ]
+      //   this.categorias = [
+      //     {id: 1, categoria: 'Categoría A'},
+      //     {id: 2, categoria: 'Categoría B'}
+      //   ]
+      // }else if(this.area.curso == 'Nivel 1: Estudiantes hasta 2° de secundaria. Nivel 2: Estudiantes de 3° y 4° de secundaria. Nivel 3: Estudiantes de 5° y 6° de secundaria. Registro Viernes 24 de octubre de horas 14:30 a 15:30 Prueba Viernes 24 de octubre Desde horas 15:30 a 18:00'){
+      //   this.cursos=[
+      //     {id: 1, curso: '1º de Secundaria'},
+      //     {id: 2, curso: '2º de Secundaria'},
+      //     {id: 3, curso: '3º de Secundaria'},
+      //     {id: 4, curso: '4º de Secundaria'},
+      //     {id: 5, curso: '5º de Secundaria'},
+      //     {id: 6, curso: '6º de Secundaria'}
+      //   ]
+      //   this.categorias = [
+      //     {id: 1, categoria: 'Nivel 1'},
+      //     {id: 2, categoria: 'Nivel 2'},
+      //     {id: 3, categoria: 'Nivel 3'}
+      //   ]
+      // }
+      // else if(this.area.curso == 'Categoría A 1º a 3º de secundaria. Categoría B 4º a 6º de secundaria Competencia Categoría A Domingo 26 de octubre. Horas: 9:00 am. Categoría B Domingo 26 de octubre. Horas: 14:00'){
+      //   this.cursos=[
+      //     {id: 1, curso: '1º de Secundaria'},
+      //     {id: 2, curso: '2º de Secundaria'},
+      //     {id: 3, curso: '3º de Secundaria'},
+      //     {id: 4, curso: '4º de Secundaria'},
+      //     {id: 5, curso: '5º de Secundaria'},
+      //     {id: 6, curso: '6º de Secundaria'}
+      //   ]
+      //   this.categorias = [
+      //     {id: 1, categoria: 'Categoría A'},
+      //     {id: 2, categoria: 'Categoría B'}
+      //   ]
+      // }
+      else{
+        this.cursos = []
+      }
     }
   }
 }
