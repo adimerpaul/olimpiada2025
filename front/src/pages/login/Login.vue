@@ -97,6 +97,7 @@ export default {
         if (!token) throw new Error('Token no recibido')
         localStorage.setItem('tokenOlim', token)
         this.$store.user = user
+        this.$store.isLogged = true
         // refresca header Authorization en el boot
         this.$axios.defaults.headers.common.Authorization = `Bearer ${token}`
         this.$q.notify({ type: 'positive', message: 'Bienvenido 👋' })
