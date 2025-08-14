@@ -15,7 +15,7 @@ Route::get('/areas', [AreaController::class, 'index']);
 
 // Inscripción
 Route::post('/inscritos', [InscritoController::class, 'store']);
-Route::get('/inscripciones/{id}', [InscritoController::class, 'publicShow']);
+Route::get('/inscritos/{id}', [InscritoController::class, 'publicShow']);
 
 // Utilidad: contar en cuántas áreas está inscrito un CI
 Route::get('/inscritos/areas-por-ci/{ci}', [InscritoController::class, 'areasPorCi']);
@@ -29,7 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/inscritos/count', [InscritoController::class, 'count']);
 
     Route::get('/inscritos', [InscritoController::class, 'index']);
-    Route::get('/inscritos/{id}', [InscritoController::class, 'show']);
+//    Route::get('/inscritos/{id}', [InscritoController::class, 'show']);
     Route::post('/inscritos/{id}', [InscritoController::class, 'update']);
     Route::delete('/inscritos/{id}', [InscritoController::class, 'destroy']);
 
