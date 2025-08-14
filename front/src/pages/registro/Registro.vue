@@ -221,6 +221,8 @@
 </template>
 
 <script>
+import {generarPDFInscripcion} from "src/utils/inscripcion-pdf.js";
+
 export default {
   name: 'RegistroGrupo',
   data () {
@@ -349,6 +351,13 @@ export default {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
         this.$q.notify({ type: 'positive', message: 'Inscripción registrada' })
+        generarPDFInscripcion({
+          inscrito: resp.data?.inscrito || {},
+          area: this.selectedArea,
+          integrantes: this.integrantes,
+          baseUrl: window.location.origin,
+          assets: { left: '/images.png', right: '/logo_fni.png' }
+        })
         this.resetForm()
       } catch (e) {
         const msg = e?.response?.data?.message || 'Error al registrar'
