@@ -14,6 +14,10 @@ const routes = [
     component: () => import('pages/registro/Registro.vue')
   },
   {
+    path: '/inscripciones/:id',
+    component: () => import('pages/registro/Inscripciones.vue'),
+  },
+  {
     path: '/login',
     component: () => import('pages/login/Login.vue')
   },

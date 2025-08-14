@@ -138,6 +138,11 @@
                     </q-item-section>
                     <q-item-section>Eliminar</q-item-section>
                   </q-item>
+<!--                  imprimir pdf-->
+                  <q-item clickable @click="imprimirConstancia(row)" v-close-popup>
+                    <q-item-section avatar><q-icon name="print" /></q-item-section>
+                    <q-item-section>Imprimir Constancia</q-item-section>
+                  </q-item>
                 </q-list>
               </q-btn-dropdown>
             </td>
@@ -308,6 +313,8 @@
 </template>
 
 <script>
+import {generarPDFInscripcion} from "src/utils/inscripcion-pdf.js";
+
 export default {
   name: 'Inscritos',
   data () {
@@ -511,6 +518,30 @@ export default {
         this.$q.notify({ type: 'negative', message: msg })
       } finally {
         this.editDialog.saving = false
+      }
+    },
+    async imprimirConstancia (row) {
+      // normalizar por si llega sin _integrantes
+      const r = this.normalizeRow(row)
+
+      try {
+        await generarPDFInscripcion({
+          inscrito: {
+            id: r.id,
+            grupo_nombre: r.grupo_nombre,
+            created_at: r.created_at,
+            pago1: r.pago1
+          },
+          area: r.area || this.areas.find(a => a.id === r.area_id) || {},
+          integrantes: r._integrantes || [],
+          // el QR abrirá /inscripciones/:id en TU frontend
+          baseUrl: (import.meta && import.meta.env && import.meta.env.VITE_PUBLIC_FRONT)
+            ? import.meta.env.VITE_PUBLIC_FRONT
+            : window.location.origin,
+          assets: { left: '/images.png', right: '/logo_fni.png' }
+        })
+      } catch (e) {
+        this.$q.notify({ type: 'negative', message: 'No se pudo generar la constancia' })
       }
     },
     confirmDelete (row) {

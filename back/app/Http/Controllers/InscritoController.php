@@ -8,10 +8,33 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
-class InscritoController extends Controller
-{
+class InscritoController extends Controller{
     // Máximo de áreas distintas permitidas por estudiante (por CI)
     private int $MAX_AREAS = 3;
+
+    public function publicShow($id)
+    {
+        $inscrito = \App\Models\Inscrito::with('area')->findOrFail($id);
+
+        // Armar integrantes desde columnas 1..10
+        $integrantes = [];
+        for ($i = 1; $i <= 10; $i++) {
+            if ($inscrito->{"estudiante{$i}"}){
+                $integrantes[] = [
+                    'nombre'   => $inscrito->{"estudiante{$i}"},
+                    'ci'       => $inscrito->{"ci{$i}"},
+                    'curso'    => $inscrito->{"curso{$i}"},
+                    'tutor'    => $inscrito->{"tutor{$i}"},
+                    'telefono' => $inscrito->{"telefono{$i}"},
+                ];
+            }
+        }
+
+        return view('inscripciones.ver', [
+            'inscrito'    => $inscrito,
+            'integrantes' => $integrantes,
+        ]);
+    }
 
     function count(){
         // Contar el total de inscritos
@@ -267,7 +290,7 @@ class InscritoController extends Controller
 
         return response()->json([
             'message' => 'Inscripción registrada correctamente',
-            'data' => $inscrito
+            'inscrito' => $inscrito
         ], 201);
     }
 }

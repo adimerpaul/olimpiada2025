@@ -15,6 +15,7 @@ Route::get('/areas', [AreaController::class, 'index']);
 
 // Inscripción
 Route::post('/inscritos', [InscritoController::class, 'store']);
+Route::get('/inscripciones/{id}', [InscritoController::class, 'publicShow']);
 
 // Utilidad: contar en cuántas áreas está inscrito un CI
 Route::get('/inscritos/areas-por-ci/{ci}', [InscritoController::class, 'areasPorCi']);
