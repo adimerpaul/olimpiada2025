@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AreaController;
+use App\Http\Controllers\InscritoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -10,3 +11,9 @@ use Illuminate\Support\Facades\Route;
 
 //AREAS
 Route::get('/areas', [AreaController::class, 'index']);
+
+// Inscripción
+Route::post('/inscritos', [InscritoController::class, 'store']);
+
+// Utilidad: contar en cuántas áreas está inscrito un CI
+Route::get('/inscritos/areas-por-ci/{ci}', [InscritoController::class, 'areasPorCi']);

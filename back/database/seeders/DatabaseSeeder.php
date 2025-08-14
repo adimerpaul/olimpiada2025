@@ -33,6 +33,8 @@ class DatabaseSeeder extends Seeder
             'lugar' => null,
             'modalidad' => null,
             'inscripcion' => null,
+            'cupos_por_grado' => null,
+            'reglas_especiales' => null,
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
         ], $overrides);
@@ -55,6 +57,13 @@ class DatabaseSeeder extends Seeder
                 'lugar' => 'Laboratorios del Depto. de Química – Bloque 300',
                 'modalidad' => 'Presencial',
                 'inscripcion' => 'Prueba teórica hasta el 02/09/2025 18:00; experimental hasta el 09/09/2025 18:00, en secretaria del Depto. de Química – Ciudadela Universitaria F.N.I.',
+                // Cupos: 10 por grado; reglas especiales para la parte experimental
+                'cupos_por_grado' => json_encode(["1"=>10,"2"=>10,"3"=>10,"4"=>10,"5"=>10,"6"=>10]),
+                'reglas_especiales' => json_encode([
+                    'quimica_experimental' => [
+                        'grupo_min' => 3, 'grupo_max' => 4, 'max_grupos_por_grado' => 3
+                    ]
+                ]),
             ]),
             $this->base([
                 'area' => 'MEDIO AMBIENTE',
@@ -62,11 +71,11 @@ class DatabaseSeeder extends Seeder
                 'curso6' => '6º Secundaria',
                 'titulo_fecha1' => 'Competencia Única',
                 'fecha1' => '2025-09-06',
-                'titulo_fecha2' => null,
-                'fecha2' => null,
                 'lugar' => 'Ambientes de la carrera Ing. Química e Ing. de Alimentos',
                 'modalidad' => 'Presencial',
                 'inscripcion' => 'Del 27/08/2025 al 03/09/2025, en secretaria de Ing. Química e Ing. de Alimentos – Ciudadela Universitaria F.N.I. (9:00–12:00 y 15:00–17:00).',
+                // Cupos: 5º y 6º con 10
+                'cupos_por_grado' => json_encode(["5"=>10,"6"=>10]),
             ]),
             $this->base([
                 'area' => 'BIOLOGÍA',
@@ -76,11 +85,11 @@ class DatabaseSeeder extends Seeder
                 'curso6' => '6º Secundaria',
                 'titulo_fecha1' => 'Competencia Única',
                 'fecha1' => '2025-09-10',
-                'titulo_fecha2' => null,
-                'fecha2' => null,
                 'lugar' => 'Ciudadela Universitaria',
                 'modalidad' => 'Presencial',
                 'inscripcion' => 'Hasta el 29/08/2025 12:00, en secretaria de Ing. Química e Ing. de Alimentos – Ciudadela Universitaria F.N.I.',
+                // Cupos: 3º–6º con 10
+                'cupos_por_grado' => json_encode(["3"=>10,"4"=>10,"5"=>10,"6"=>10]),
             ]),
             $this->base([
                 'area' => 'FÍSICA',
@@ -95,6 +104,8 @@ class DatabaseSeeder extends Seeder
                 'lugar' => 'Laboratorio de Física – Bloque 300',
                 'modalidad' => 'Presencial',
                 'inscripcion' => 'Hasta el 12/09/2025 12:00, en el Laboratorio de Física Virtual (Aula 101, Bloque Hugo Murillo Benich – Ciudadela Universitaria F.N.I.).',
+                // Sin límite (JSON vacío)
+                'cupos_por_grado' => json_encode(new \stdClass()),
             ]),
             $this->base([
                 'area' => 'MATEMÁTICA',
@@ -111,6 +122,8 @@ class DatabaseSeeder extends Seeder
                 'lugar' => 'Bloque 300',
                 'modalidad' => 'Presencial',
                 'inscripcion' => 'Del 03/09/2025 al 12/09/2025, Oficina de la Olimpiada Matemática Oruro – Bloque 300, 2º piso (9:00–12:00).',
+                // Cupos: 1º–6º con 6
+                'cupos_por_grado' => json_encode(["1"=>6,"2"=>6,"3"=>6,"4"=>6,"5"=>6,"6"=>6]),
             ]),
             $this->base([
                 'area' => 'GEOGRAFÍA',
@@ -120,11 +133,11 @@ class DatabaseSeeder extends Seeder
                 'curso6' => '6º Secundaria',
                 'titulo_fecha1' => 'Competencia Única',
                 'fecha1' => '2025-09-26',
-                'titulo_fecha2' => null,
-                'fecha2' => null,
                 'lugar' => 'Bloque 300',
                 'modalidad' => 'Presencial',
                 'inscripcion' => 'Hasta el 24/09/2025 17:00, en secretaria de Ingeniería Geológica – Ciudadela Universitaria F.N.I.',
+                // Sin límite
+                'cupos_por_grado' => json_encode(new \stdClass()),
             ]),
             $this->base([
                 'area' => 'ASTRONOMÍA Y ASTROFÍSICA',
@@ -139,6 +152,8 @@ class DatabaseSeeder extends Seeder
                 'lugar' => 'Bloque 300 – Aula 101, Bloque Hugo Murillo Benich',
                 'modalidad' => 'Presencial',
                 'inscripcion' => 'Hasta el 03/10/2025 12:00, Laboratorio de Física Virtual – Ciudadela Universitaria F.N.I.',
+                // Sin límite
+                'cupos_por_grado' => json_encode(new \stdClass()),
             ]),
             $this->base([
                 'area' => 'ENERGÍAS',
@@ -153,6 +168,8 @@ class DatabaseSeeder extends Seeder
                 'lugar' => 'Carrera de Ing. Mecánica, Electromecánica, Mecatrónica',
                 'modalidad' => 'Presencial',
                 'inscripcion' => 'Hasta el 10/10/2025 16:00, en secretaria de la carrera – Ciudadela Universitaria F.N.I.',
+                // Sin límite
+                'cupos_por_grado' => json_encode(new \stdClass()),
             ]),
             $this->base([
                 'area' => 'PROGRAMACIÓN',
@@ -167,6 +184,8 @@ class DatabaseSeeder extends Seeder
                 'lugar' => 'Ingeniería de Sistemas e Informática',
                 'modalidad' => 'Presencial',
                 'inscripcion' => 'Del 01/09/2025 al 10/10/2025, en secretaria de la Carrera de SIS-INF – Ciudadela Universitaria F.N.I.',
+                // Sin límite
+                'cupos_por_grado' => json_encode(new \stdClass()),
             ]),
             $this->base([
                 'area' => 'REDES Y CIBERSEGURIDAD',
@@ -180,6 +199,8 @@ class DatabaseSeeder extends Seeder
                 'lugar' => 'Laboratorios Bloque B y C – SISINF',
                 'modalidad' => 'Presencial',
                 'inscripcion' => 'Del 01/10/2025 al 20/10/2025, secretaria Academia Cisco SISFNIUTO – Edif. 3 de Julio.',
+                // Sin límite
+                'cupos_por_grado' => json_encode(new \stdClass()),
             ]),
             $this->base([
                 'area' => 'ROBÓTICA',
@@ -196,6 +217,8 @@ class DatabaseSeeder extends Seeder
                 'lugar' => 'Ciudadela Universitaria – Bloque B SISINF',
                 'modalidad' => 'Presencial',
                 'inscripcion' => 'Del 01/10/2025 al 22/10/2025, en secretaria de SIS-INF – Ciudadela Universitaria F.N.I.',
+                // Sin límite
+                'cupos_por_grado' => json_encode(new \stdClass()),
             ]),
             $this->base([
                 'area' => 'DISEÑADORES Y FABRICADORES',
@@ -212,6 +235,8 @@ class DatabaseSeeder extends Seeder
                 'lugar' => 'Ing. Mecánica, Electromecánica, Mecatrónica',
                 'modalidad' => 'Presencial',
                 'inscripcion' => 'Hasta el 24/10/2025 17:30, en secretaria de la carrera – Ciudadela Universitaria F.N.I.',
+                // Sin límite
+                'cupos_por_grado' => json_encode(new \stdClass()),
             ]),
         ]);
     }
