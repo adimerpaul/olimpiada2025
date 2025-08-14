@@ -31,4 +31,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/inscritos/{id}', [InscritoController::class, 'show']);
     Route::post('/inscritos/{id}', [InscritoController::class, 'update']);
     Route::delete('/inscritos/{id}', [InscritoController::class, 'destroy']);
+
+    Route::get('/areas/{id}',   [AreaController::class, 'show']);
+    Route::post('/areas',       [AreaController::class, 'store']);
+    Route::put('/areas/{id}',   [AreaController::class, 'update']);
+    Route::delete('/areas/{id}',[AreaController::class, 'destroy']);
 });
