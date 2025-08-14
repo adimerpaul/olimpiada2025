@@ -1,6 +1,7 @@
 const routes = [
   {
     path: '/menu',
+    // name: 'menu',
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', component: () => import('pages/IndexPage.vue') }
@@ -9,6 +10,10 @@ const routes = [
   {
     path: '/',
     component: () => import('pages/registro/Registro.vue')
+  },
+  {
+    path: '/login',
+    component: () => import('pages/login/Login.vue')
   },
 
   // Always leave this as last one,
