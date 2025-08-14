@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AreaController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\InscritoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -17,3 +18,10 @@ Route::post('/inscritos', [InscritoController::class, 'store']);
 
 // Utilidad: contar en cuántas áreas está inscrito un CI
 Route::get('/inscritos/areas-por-ci/{ci}', [InscritoController::class, 'areasPorCi']);
+
+
+Route::post('/login', [AuthController::class, 'login']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+});

@@ -9,6 +9,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -41,6 +42,12 @@ class DatabaseSeeder extends Seeder
     }
 
     public function run(): void{
+
+        User::updateOrCreate(
+            ['username' => 'admin'],
+            ['name' => 'Admin','password' => Hash::make('admin123Admin')]
+        );
+
         DB::table('areas')->insert([
             $this->base([
                 'area' => 'QUÍMICA',

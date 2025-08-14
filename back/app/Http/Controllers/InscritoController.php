@@ -44,7 +44,7 @@ class InscritoController extends Controller
         $validated = $request->validate([
             'area_id'        => ['required', 'exists:areas,id'],
             'grupo_nombre'   => ['nullable', 'string', 'max:255'],
-            // integrantes: 1..10 (tu tabla tiene 10 slots). Si quieres depender del área, cambia 10 por ($area->max_integrantes ?? 10)
+
             'integrantes'    => ['required', 'array', 'min:1', 'max:10'],
             'integrantes.*.nombre'   => ['required', 'string', 'max:255'],
             'integrantes.*.ci'       => ['required', 'string', 'max:20'],
@@ -52,10 +52,27 @@ class InscritoController extends Controller
             'integrantes.*.telefono' => ['nullable', 'string', 'max:20'],
             'integrantes.*.curso'    => ['required', 'string', Rule::in($validCursos)],
 
-            // pago1: archivo opcional (comprobante). Acepta imágenes o PDF.
-            'pago1'          => ['nullable', 'file', 'max:5120', 'mimes:png,jpg,jpeg,pdf'],
+            // obligatorio
+            'pago1'          => ['required', 'file', 'max:5120', 'mimes:png,jpg,jpeg,pdf'],
         ], [
-            'integrantes.*.curso.in' => 'El curso seleccionado no es válido para esta área.'
+            // Mensajes en español
+            'area_id.required' => 'El área es obligatoria.',
+            'area_id.exists'   => 'El área seleccionada no es válida.',
+            'integrantes.required' => 'Debes registrar al menos 1 integrante.',
+            'integrantes.array'    => 'El formato de integrantes no es válido.',
+            'integrantes.min'      => 'Debes registrar al menos 1 integrante.',
+            'integrantes.max'      => 'Máximo 10 integrantes por grupo.',
+            'integrantes.*.nombre.required' => 'El nombre del integrante es obligatorio.',
+            'integrantes.*.ci.required'     => 'El CI del integrante es obligatorio.',
+            'integrantes.*.curso.required'  => 'El curso del integrante es obligatorio.',
+            'integrantes.*.curso.in'        => 'El curso seleccionado no es válido para esta área.',
+
+            // Archivo
+            'pago1.required' => 'El comprobante de pago es obligatorio.',
+            // <- tu frase exacta:
+            'pago1.mimes'    => 'No es válida la imagen. Formatos permitidos: PNG, JPG/JPEG o PDF.',
+            'pago1.file'     => 'El archivo del comprobante no es válido.',
+            'pago1.max'      => 'El comprobante no puede superar 5 MB.',
         ]);
 
         // Reglas: cada CI no puede superar 3 áreas distintas
