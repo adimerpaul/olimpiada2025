@@ -29,6 +29,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/inscritos', [InscritoController::class, 'index']);
     Route::get('/inscritos/{id}', [InscritoController::class, 'show']);
-    Route::put('/inscritos/{id}', [InscritoController::class, 'update']);
+    Route::post('/inscritos/{id}', [InscritoController::class, 'update']);
     Route::delete('/inscritos/{id}', [InscritoController::class, 'destroy']);
 });
