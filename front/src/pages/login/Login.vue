@@ -54,10 +54,32 @@ export default {
       showPwd: false,
       remember: true,
       loading: false,
-      error: ''
+      error: '',
+      checking: false
     }
   },
+  async mounted () {
+    await this.redirectIfLogged()
+  },
   methods: {
+    async redirectIfLogged () {
+      const token = localStorage.getItem('tokenOlim')
+      if (!token) return
+
+      this.checking = true
+      // monta el token en axios para chequear /me
+      this.$axios.defaults.headers.common.Authorization = `Bearer ${token}`
+      try {
+        await this.$axios.get('/me') // si responde OK, el token es válido
+        this.$router.replace('/menu')
+      } catch (e) {
+        // token inválido: lo limpiamos y seguimos en login
+        localStorage.removeItem('tokenOlim')
+        delete this.$axios.defaults.headers.common.Authorization
+      } finally {
+        this.checking = false
+      }
+    },
     async onLogin () {
       this.error = ''
       const ok = await this.$refs.formRef.validate()
