@@ -4,7 +4,7 @@ const routes = [
     // name: 'menu',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '/', component: () => import('pages/IndexPage.vue'), meta: { requiresAuth: true } },
+      { path: '', component: () => import('pages/IndexPage.vue'), meta: { requiresAuth: true } },
       { path: '/inscritos', component: () => import('pages/registro/Inscritos.vue'), meta: { requiresAuth: true } },
     ]
   },

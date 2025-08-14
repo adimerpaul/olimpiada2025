@@ -108,6 +108,82 @@
 <!--          </q-td>-->
 <!--        </template>-->
 <!--        </q-table>-->
+        <q-markup-table dense wrap-cells>
+          <thead>
+          <tr class="bg-primary text-white">
+            <th>Opciones</th>
+<!--            <th>ID</th>-->
+            <th>Grupo</th>
+            <th>Área</th>
+            <th>Integrantes</th>
+            <th>Fecha</th>
+            <th>Comprobante</th>
+<!--            <th></th>-->
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="(row,i) in rowsFiltered" :key="row.id">
+            <td class="text-right">
+              <q-btn-dropdown dense color="primary" :label="`Acciones ${i +1}`" no-caps size="10px">
+                <q-list>
+                  <q-item clickable @click="openEdit(row)" v-close-popup>
+                    <q-item-section avatar>
+                      <q-icon name="edit" />
+                    </q-item-section>
+                    <q-item-section>Editar</q-item-section>
+                  </q-item>
+                  <q-item clickable @click="confirmDelete(row)" v-close-popup>
+                    <q-item-section avatar>
+                      <q-icon name="delete" />
+                    </q-item-section>
+                    <q-item-section>Eliminar</q-item-section>
+                  </q-item>
+                </q-list>
+              </q-btn-dropdown>
+            </td>
+<!--            <td>{{ row.id }}</td>-->
+            <td>{{ row.grupo_nombre || '-' }}</td>
+            <td>{{ row.area?.area || '-' }}</td>
+            <td class="text-center">
+              <q-btn dense round flat icon="groups" :label="row._integrantesCount"
+                     class="text-primary">
+                <q-menu anchor="bottom middle" self="top middle">
+                  <q-list dense style="min-width:260px; max-height:300px" separator>
+                    <q-item-label header>Integrantes</q-item-label>
+                    <q-item v-for="(it, i) in row._integrantes" :key="i">
+                      <q-item-section>
+                        <div class="text-weight-medium">{{ it.nombre || '(sin nombre)' }}</div>
+                        <div class="text-caption text-grey-7">
+                          CI: {{ it.ci || '—' }} · Curso: {{ it.curso || '—' }}
+                        </div>
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </q-btn>
+            </td>
+            <td>{{ $filters.dateDmYHis(row.created_at) }}</td>
+            <td class="text-center">
+              <q-btn v-if="row.pago1" dense outline color="teal" icon="attach_file" label="Ver"
+                     :href="fileUrl(row.pago1)" target="_blank" />
+              <span v-else class="text-grey">—</span>
+            </td>
+          </tr>
+          </tbody>
+          <tfoot>
+          <tr>
+            <td colspan="2" class="text-right">Total:</td>
+            <td class="text-center">{{ rowsFiltered.reduce((sum, r) => sum + r._integrantesCount, 0) }}</td>
+            <td colspan="2"></td>
+            <td class="text-right">
+              <q-btn dense flat icon="file_download" label="Exportar CSV" class="q-mr-sm"
+                     @click="exportCsv" :disable="!rowsFiltered.length" />
+              <q-btn dense flat icon="print" label="Imprimir"
+                     @click="printTable" :disable="!rowsFiltered.length" />
+            </td>
+          </tr>
+          </tfoot>
+        </q-markup-table>
       </q-card-section>
 
       <q-inner-loading :showing="loading">
@@ -313,6 +389,32 @@ export default {
     this.fetchAll()
   },
   methods: {
+    rowsAsAlumnos (list) {
+      const out = []
+      ;(list || []).forEach(r => {
+        const fecha = this.$filters?.dateDmYHis ? this.$filters.dateDmYHis(r.created_at) : (r.created_at || '')
+        const area = (r.area && r.area.area) ? r.area.area : ''
+        const grupo = r.grupo_nombre || ''
+        const comp = r.pago1 ? this.fileUrl(r.pago1) : ''
+
+        ;(r._integrantes || []).forEach((i, idx) => {
+          out.push({
+            id: r.id,                 // id de la inscripción
+            nro: idx + 1,             // nro del integrante dentro del grupo
+            area,
+            grupo,
+            alumno: i.nombre || '',
+            ci: i.ci || '',
+            curso: i.curso || '',
+            tutor: i.tutor || '',
+            telefono: i.telefono || '',
+            fecha,
+            comprobante: comp
+          })
+        })
+      })
+      return out
+    },
     async fetchAll () {
       this.loading = true
       try {
@@ -354,7 +456,7 @@ export default {
     },
     fileUrl (path) {
       // Tu backend sirve storage en /storage
-      return `${this.$url}/storage/${path}`
+      return `${this.$url}../storage/${path}`
     },
     openEdit (row) {
       const r = this.normalizeRow(row)
@@ -385,7 +487,7 @@ export default {
         if (this.editDialog.form.pagoFile) {
           fd.append('pago1', this.editDialog.form.pagoFile)
         }
-        // integrantes[] como multipart array (igual que en tu registro)
+        // integrantes[] como multipart array
         this.editDialog.form.integrantes.forEach((i, idx) => {
           fd.append(`integrantes[${idx}][nombre]`, i.nombre)
           fd.append(`integrantes[${idx}][ci]`, i.ci)
@@ -394,7 +496,10 @@ export default {
           fd.append(`integrantes[${idx}][telefono]`, i.telefono || '')
         })
 
-        await this.$axios.post(`/inscritos/${this.editDialog.form.id}?_method=PUT`, fd, {
+        // Spoofing: enviar POST con _method=PUT en el BODY (Laravel lo reconoce)
+        // fd.append('_method', 'POST')
+
+        await this.$axios.post(`/inscritos/${this.editDialog.form.id}`, fd, {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
 
@@ -428,18 +533,21 @@ export default {
       })
     },
     exportCsv () {
-      const rows = this.rowsFiltered
-      if (!rows.length) return
-      const headers = ['ID', 'Área', 'Grupo', 'Integrantes', 'Fecha']
+      const alumnos = this.rowsAsAlumnos(this.rowsFiltered)
+      if (!alumnos.length) return
+
+      const headers = [
+        'ID inscripción', 'Nº', 'Área', 'Grupo',
+        'Alumno', 'CI', 'Curso', 'Tutor', 'Teléfono',
+        'Fecha', 'ComprobanteURL'
+      ]
       const csvRows = [headers.join(';')]
 
-      rows.forEach(r => {
+      alumnos.forEach(a => {
         const line = [
-          r.id,
-          (r.area && r.area.area) || '',
-          r.grupo_nombre || '',
-          r._integrantesCount || 0,
-          r.created_at || ''
+          a.id, a.nro, a.area, a.grupo,
+          a.alumno, a.ci, a.curso, a.tutor, a.telefono,
+          a.fecha, a.comprobante
         ].map(v => `"${String(v).replace(/"/g, '""')}"`)
         csvRows.push(line.join(';'))
       })
@@ -448,54 +556,79 @@ export default {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `inscritos_${new Date().toISOString().slice(0,10)}.csv`
+      a.download = `inscritos_alumnos_${new Date().toISOString().slice(0,10)}.csv`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     },
     printTable () {
-      const rows = this.rowsFiltered
-      const win = window.open('', '_blank')
-      const rowsHtml = rows.map(r => `
-        <tr>
-          <td>${r.id}</td>
-          <td>${(r.area && r.area.area) || ''}</td>
-          <td>${r.grupo_nombre || ''}</td>
-          <td>${r._integrantesCount || 0}</td>
-          <td>${r.created_at || ''}</td>
-        </tr>
-      `).join('')
-      win.document.write(`
-        <html>
-          <head>
-            <title>Inscritos</title>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 16px; }
-              table { border-collapse: collapse; width: 100%; }
-              th, td { border: 1px solid #ddd; padding: 8px; font-size: 12px; }
-              th { background: #1976d2; color: #fff; text-align: left; }
-              tr:nth-child(even){ background: #f6f8fa; }
-              h2 { margin: 0 0 12px; }
-            </style>
-          </head>
-          <body>
-            <h2>Listado de Inscritos</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th><th>Área</th><th>Grupo</th><th>Integrantes</th><th>Fecha</th>
-                </tr>
-              </thead>
-              <tbody>${rowsHtml}</tbody>
-            </table>
-          </body>
-        </html>
-      `)
-      win.document.close()
-      win.focus()
-      win.print()
-    }
+      const alumnos = this.rowsAsAlumnos(this.rowsFiltered)
+      if (!alumnos.length) return
+
+      const rowsHtml = alumnos.map(a => `
+    <tr>
+      <td>${a.id}</td>
+      <td>${a.nro}</td>
+      <td>${a.area}</td>
+      <td>${a.grupo}</td>
+      <td>${a.alumno}</td>
+      <td>${a.ci}</td>
+      <td>${a.curso}</td>
+      <td>${a.tutor}</td>
+      <td>${a.telefono}</td>
+      <td>${a.fecha}</td>
+      <td>${a.comprobante ? `<a href="${a.comprobante}" target="_blank">ver</a>` : '—'}</td>
+    </tr>
+  `).join('')
+
+      const w = window.open('', '_blank')
+      w.document.write(`
+    <html>
+      <head>
+        <title>Inscritos por alumno</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 16px; color:#222; }
+          h2 { margin: 0 0 12px; }
+          .sub { color:#666; margin: 0 0 16px; }
+          table { border-collapse: collapse; width: 100%; }
+          th, td { border: 1px solid #e0e0e0; padding: 8px; font-size: 12px; }
+          th { background: #1976d2; color: #fff; text-align: left; position: sticky; top: 0; }
+          tr:nth-child(even){ background: #f9fbfd; }
+          @media print {
+            a { color: #1976d2; text-decoration: underline; }
+            th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          }
+        </style>
+      </head>
+      <body>
+        <h2>Listado de alumnos inscritos</h2>
+        <div class="sub">Total alumnos: <b>${alumnos.length}</b></div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID Inscripción</th>
+              <th>Nº</th>
+              <th>Área</th>
+              <th>Grupo</th>
+              <th>Alumno</th>
+              <th>CI</th>
+              <th>Curso</th>
+              <th>Tutor</th>
+              <th>Teléfono</th>
+              <th>Fecha</th>
+              <th>Comprobante</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </body>
+    </html>
+  `)
+      w.document.close()
+      w.focus()
+      w.print()
+    },
   }
 }
 </script>
