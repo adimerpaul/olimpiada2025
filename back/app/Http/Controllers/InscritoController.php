@@ -13,6 +13,42 @@ class InscritoController extends Controller
     // Máximo de áreas distintas permitidas por estudiante (por CI)
     private int $MAX_AREAS = 3;
 
+    function count(){
+        // Contar el total de inscritos
+        $total = Inscrito::count();
+        return response()->json(['count' => $total]);
+    }
+//Route::get('/inscritos', [InscritoController::class, 'index']);
+//Route::get('/inscritos/{id}', [InscritoController::class, 'show']);
+//Route::put('/inscritos/{id}', [InscritoController::class, 'update']);
+//Route::delete('/inscritos/{id}', [InscritoController::class, 'destroy']);
+    public function index()
+    {
+        // Obtener todos los inscritos con sus áreas
+        $inscritos = Inscrito::with('area')->get();
+        return response()->json($inscritos);
+    }
+    public function show($id)
+    {
+        // Obtener un inscrito por ID con su área
+        $inscrito = Inscrito::with('area')->findOrFail($id);
+        return response()->json($inscrito);
+    }
+    public function update(Request $request, $id)
+    {
+        // Actualizar un inscrito por ID
+        $inscrito = Inscrito::findOrFail($id);
+        $inscrito->update($request->all());
+        return response()->json($inscrito);
+    }
+    public function destroy($id)
+    {
+        // Eliminar un inscrito por ID
+        $inscrito = Inscrito::findOrFail($id);
+        $inscrito->delete();
+        return response()->json(['message' => 'Inscrito eliminado correctamente']);
+    }
+
     public function areasPorCi(string $ci)
     {
         // Busca el CI en cualquiera de las columnas ci1..ci10 y devuelve cuántas áreas distintas tiene
