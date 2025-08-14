@@ -124,7 +124,7 @@ export default {
     },
     async fetchInscritosCount () {
       try {
-        const { data } = await this.$axios.get('/inscritos/count')
+        const { data } = await this.$axios.get('/inscritosCount')
         this.inscritosCount = data && typeof data.count === 'number' ? data.count : 0
       } catch (e) {
         this.inscritosCount = 0
