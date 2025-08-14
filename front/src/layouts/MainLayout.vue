@@ -85,13 +85,13 @@
     </q-page-container>
 
     <!-- FOOTER -->
-    <q-footer bordered class="bg-grey-1 text-grey-7">
-      <div class="row items-center q-px-md q-py-xs">
-        <div class="col">© {{ year }} F.N.I.</div>
-        <q-space />
-        <div class="col-auto">Quasar v{{ $q.version }}</div>
-      </div>
-    </q-footer>
+<!--    <q-footer bordered class="bg-grey-1 text-grey-7">-->
+<!--      <div class="row items-center q-px-md q-py-xs">-->
+<!--        <div class="col">© {{ year }} F.N.I.</div>-->
+<!--        <q-space />-->
+<!--        <div class="col-auto">Quasar v{{ $q.version }}</div>-->
+<!--      </div>-->
+<!--    </q-footer>-->
   </q-layout>
 </template>
 
