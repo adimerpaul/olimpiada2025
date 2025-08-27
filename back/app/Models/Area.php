@@ -19,6 +19,10 @@ class Area extends Model
         'lugar','modalidad','inscripcion',
         'cupos_por_grado',       // JSON
         'reglas_especiales',     // JSON
+        'participacion',
+        'min_integrantes',
+        'max_integrantes',
+        'grupo_mismo_curso',
     ];
 
     protected $casts = [

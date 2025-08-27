@@ -8,9 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
-class InscritoController extends Controller{
-    // Máximo de áreas distintas permitidas por estudiante (por CI)
-    private int $MAX_AREAS = 3;
+class InscritoController extends Controller
+{
+    private int $MAX_AREAS = 3; // por CI
 
     public function publicShow($id)
     {
@@ -18,145 +18,23 @@ class InscritoController extends Controller{
         return response()->json($inscrito);
     }
 
-    function count(){
-        // Contar el total de inscritos
-        $total = Inscrito::count();
-        return response()->json(['count' => $total]);
+    public function count()
+    {
+        return response()->json(['count' => Inscrito::count()]);
     }
-//Route::get('/inscritos', [InscritoController::class, 'index']);
-//Route::get('/inscritos/{id}', [InscritoController::class, 'show']);
-//Route::put('/inscritos/{id}', [InscritoController::class, 'update']);
-//Route::delete('/inscritos/{id}', [InscritoController::class, 'destroy']);
+
     public function index()
     {
-        // Obtener todos los inscritos con sus áreas
-        $inscritos = Inscrito::with('area')->get();
-        return response()->json($inscritos);
+        return response()->json(Inscrito::with('area')->get());
     }
+
     public function show($id)
     {
-        // Obtener un inscrito por ID con su área
-        $inscrito = Inscrito::with('area')->findOrFail($id);
-        return response()->json($inscrito);
-    }
-    public function update(Request $request, $id)
-    {
-        $inscrito = Inscrito::findOrFail($id);
-
-        // Si cambian de área, usamos la nueva; si no, la actual
-        $areaId = $request->input('area_id', $inscrito->area_id);
-        $area   = Area::findOrFail($areaId);
-
-        // Cursos válidos para el área (solo los no nulos)
-        $validCursos = [];
-        for ($i = 1; $i <= 6; $i++) {
-            if (!empty($area->{"curso{$i}"})) {
-                $validCursos[] = $area->{"curso{$i}"}; // p.ej. "3º Secundaria"
-            }
-        }
-
-        // Validación (pago1 ahora es OPCIONAL)
-        $validated = $request->validate([
-            'area_id'        => ['required', 'exists:areas,id'],
-            'grupo_nombre'   => ['nullable', 'string', 'max:255'],
-
-            'integrantes'    => ['required', 'array', 'min:1', 'max:10'],
-            'integrantes.*.nombre'   => ['required', 'string', 'max:255'],
-            'integrantes.*.ci'       => ['required', 'string', 'max:20'],
-            'integrantes.*.tutor'    => ['nullable', 'string', 'max:255'],
-            'integrantes.*.telefono' => ['nullable', 'string', 'max:20'],
-            'integrantes.*.curso'    => ['required', 'string', Rule::in($validCursos)],
-
-            'pago1'          => ['nullable', 'file', 'max:5120', 'mimes:png,jpg,jpeg,pdf'],
-        ], [
-            'area_id.required' => 'El área es obligatoria.',
-            'area_id.exists'   => 'El área seleccionada no es válida.',
-            'integrantes.required' => 'Debes registrar al menos 1 integrante.',
-            'integrantes.array'    => 'El formato de integrantes no es válido.',
-            'integrantes.min'      => 'Debes registrar al menos 1 integrante.',
-            'integrantes.max'      => 'Máximo 10 integrantes por grupo.',
-            'integrantes.*.nombre.required' => 'El nombre del integrante es obligatorio.',
-            'integrantes.*.ci.required'     => 'El CI del integrante es obligatorio.',
-            'integrantes.*.curso.required'  => 'El curso del integrante es obligatorio.',
-            'integrantes.*.curso.in'        => 'El curso seleccionado no es válido para esta área.',
-            'pago1.mimes'    => 'No es válida la imagen. Formatos permitidos: PNG, JPG/JPEG o PDF.',
-            'pago1.file'     => 'El archivo del comprobante no es válido.',
-            'pago1.max'      => 'El comprobante no puede superar 5 MB.',
-        ]);
-
-        // Regla CI: máximo 3 áreas distintas (excluyendo ESTE registro para no contarlo doble)
-        $ciList = collect($validated['integrantes'])->pluck('ci')->unique()->values();
-        foreach ($ciList as $ci) {
-            $areasActuales = Inscrito::query()
-                ->where('id', '<>', $inscrito->id) // EXCLUIR este
-                ->where(function ($q) use ($ci) {
-                    for ($i = 1; $i <= 10; $i++) {
-                        $q->orWhere("ci{$i}", $ci);
-                    }
-                })
-                ->distinct('area_id')
-                ->pluck('area_id')
-                ->toArray();
-
-            // Si YA está en esta misma área (en otro registro), seguiría siendo la misma área
-            if (!in_array((int)$areaId, $areasActuales, true) && count($areasActuales) >= $this->MAX_AREAS) {
-                return response()->json([
-                    'message' => "El CI {$ci} ya alcanzó el máximo de {$this->MAX_AREAS} áreas permitidas."
-                ], 422);
-            }
-        }
-
-        // Actualizar campos base
-        $inscrito->area_id = $areaId;
-        $inscrito->grupo_nombre = $validated['grupo_nombre'] ?? null;
-
-        // Limpiar TODOS los slots 1..10 antes de re-mapear (importante para aumentar/disminuir)
-        for ($i = 1; $i <= 10; $i++) {
-            $inscrito->{"estudiante{$i}"} = null;
-            $inscrito->{"ci{$i}"} = null;
-            $inscrito->{"tutor{$i}"} = null;
-            $inscrito->{"telefono{$i}"} = null;
-            $inscrito->{"curso{$i}"} = null;
-        }
-
-        // Re-mapear integrantes
-        foreach ($validated['integrantes'] as $idx => $data) {
-            $pos = $idx + 1;
-            $inscrito->{"estudiante{$pos}"} = $data['nombre'];
-            $inscrito->{"ci{$pos}"}         = $data['ci'];
-            $inscrito->{"tutor{$pos}"}      = $data['tutor'] ?? null;
-            $inscrito->{"telefono{$pos}"}   = $data['telefono'] ?? null;
-            $inscrito->{"curso{$pos}"}      = $data['curso'];
-        }
-
-        // Reemplazo de comprobante (si llega archivo)
-        if ($request->hasFile('pago1')) {
-            // borrar anterior si existe
-            if ($inscrito->pago1) {
-                Storage::disk('public')->delete($inscrito->pago1);
-            }
-            $path = $request->file('pago1')->store('comprobantes', 'public');
-            $inscrito->pago1 = $path;
-        }
-
-        $inscrito->save();
-
-        return response()->json([
-            'message' => 'Inscripción actualizada correctamente',
-            'data' => $inscrito->load('area')
-        ]);
-    }
-    public function destroy($id)
-    {
-        // Eliminar un inscrito por ID
-        $inscrito = Inscrito::findOrFail($id);
-        $inscrito->delete();
-        return response()->json(['message' => 'Inscrito eliminado correctamente']);
+        return response()->json(Inscrito::with('area')->findOrFail($id));
     }
 
     public function areasPorCi(string $ci)
     {
-        // Busca el CI en cualquiera de las columnas ci1..ci10 y devuelve cuántas áreas distintas tiene
         $areaCount = Inscrito::query()
             ->where(function ($q) use ($ci) {
                 for ($i = 1; $i <= 10; $i++) {
@@ -173,108 +51,205 @@ class InscritoController extends Controller{
     {
         $area = Area::findOrFail($request->area_id);
 
-        // Cursos válidos para el área (solo los que no son null)
+        // Cursos permitidos
         $validCursos = [];
         for ($i = 1; $i <= 6; $i++) {
-            if (!empty($area->{"curso{$i}"})) {
-                $validCursos[] = $area->{"curso{$i}"};
-            }
+            if (!empty($area->{"curso{$i}"})) $validCursos[] = $area->{"curso{$i}"};
         }
 
-        // Validación
-        $validated = $request->validate([
-            'area_id'        => ['required', 'exists:areas,id'],
-            'grupo_nombre'   => ['nullable', 'string', 'max:255'],
+        $min = max(1, (int)($area->min_integrantes ?? 1));
+        $max = max($min, (int)($area->max_integrantes ?? 10));
 
-            'integrantes'    => ['required', 'array', 'min:1', 'max:10'],
-            'integrantes.*.nombre'   => ['required', 'string', 'max:255'],
+        $validated = $request->validate([
+            'area_id'      => ['required', 'exists:areas,id'],
+            'grupo_nombre' => ['nullable', 'string', 'max:255'],
+
+            // Tutor / UE
+            'tutor_paterno' => ['nullable', 'string', 'max:255'],
+            'tutor_materno' => ['nullable', 'string', 'max:255'],
+            'tutor_nombre'  => ['nullable', 'string', 'max:255'],
+            'tutor_celular' => ['nullable', 'string', 'max:30'],
+            'tutor_correo'  => ['nullable', 'email', 'max:255'],
+            'colegio'       => ['nullable', 'string', 'max:255'],
+            'ciudad'        => ['nullable', 'string', 'max:255'],
+
+            // Integrantes
+            'integrantes'            => ['required', 'array', "min:{$min}", "max:{$max}"],
+            'integrantes.*.apellidos'=> ['required', 'string', 'max:255'],
+            'integrantes.*.nombres'  => ['required', 'string', 'max:255'],
             'integrantes.*.ci'       => ['required', 'string', 'max:20'],
-            'integrantes.*.tutor'    => ['nullable', 'string', 'max:255'],
             'integrantes.*.telefono' => ['nullable', 'string', 'max:20'],
             'integrantes.*.curso'    => ['required', 'string', Rule::in($validCursos)],
 
-            // obligatorio
-            'pago1'          => ['required', 'file', 'max:5120', 'mimes:png,jpg,jpeg,pdf'],
+            // Comprobante
+            'pago1' => ['nullable', 'file', 'max:5120', 'mimes:png,jpg,jpeg,pdf'],
         ], [
-            // Mensajes en español
-            'area_id.required' => 'El área es obligatoria.',
-            'area_id.exists'   => 'El área seleccionada no es válida.',
-            'integrantes.required' => 'Debes registrar al menos 1 integrante.',
-            'integrantes.array'    => 'El formato de integrantes no es válido.',
-            'integrantes.min'      => 'Debes registrar al menos 1 integrante.',
-            'integrantes.max'      => 'Máximo 10 integrantes por grupo.',
-            'integrantes.*.nombre.required' => 'El nombre del integrante es obligatorio.',
-            'integrantes.*.ci.required'     => 'El CI del integrante es obligatorio.',
-            'integrantes.*.curso.required'  => 'El curso del integrante es obligatorio.',
-            'integrantes.*.curso.in'        => 'El curso seleccionado no es válido para esta área.',
-
-            // Archivo
-            'pago1.required' => 'El comprobante de pago es obligatorio.',
-            // <- tu frase exacta:
-            'pago1.mimes'    => 'No es válida la imagen. Formatos permitidos: PNG, JPG/JPEG o PDF.',
-            'pago1.file'     => 'El archivo del comprobante no es válido.',
-            'pago1.max'      => 'El comprobante no puede superar 5 MB.',
+            'integrantes.min' => "Debes registrar al menos {$min} integrante(s) para esta área.",
+            'integrantes.max' => "Máximo {$max} integrante(s) para esta área.",
         ]);
 
-        // Reglas: cada CI no puede superar 3 áreas distintas
-        // (si ya está en >=3 áreas y esta nueva área es una cuarta, rechazamos)
+        // Regla 3 áreas por CI
         $ciList = collect($validated['integrantes'])->pluck('ci')->unique()->values();
-
         foreach ($ciList as $ci) {
             $areasActuales = Inscrito::query()
                 ->where(function ($q) use ($ci) {
-                    for ($i = 1; $i <= 10; $i++) {
-                        $q->orWhere("ci{$i}", $ci);
-                    }
+                    for ($i = 1; $i <= 10; $i++) $q->orWhere("ci{$i}", $ci);
                 })
                 ->distinct('area_id')
                 ->pluck('area_id')
                 ->toArray();
 
-            // Si YA está en esta misma área, evitamos duplicados del mismo CI en la misma área
             if (in_array($validated['area_id'], $areasActuales, true)) {
-                return response()->json([
-                    'message' => "El CI {$ci} ya está inscrito en esta área."
-                ], 422);
+                return response()->json(['message' => "El CI {$ci} ya está inscrito en esta área."], 422);
             }
-
-            // Si ya tiene 3 áreas diferentes, bloquear
             if (count($areasActuales) >= $this->MAX_AREAS) {
-                return response()->json([
-                    'message' => "El CI {$ci} ya alcanzó el máximo de {$this->MAX_AREAS} áreas permitidas."
-                ], 422);
+                return response()->json(['message' => "El CI {$ci} ya alcanzó el máximo de {$this->MAX_AREAS} áreas permitidas."], 422);
             }
         }
 
-        // Crear registro
+        // Crear
         $inscrito = new Inscrito();
-        $inscrito->area_id = $validated['area_id'];
-        $inscrito->grupo_nombre = $validated['grupo_nombre'] ?? null;
-        $inscrito->max_integrantes = 10; // o $area->max_integrantes si lo agregas a areas
-        $inscrito->tutor = $request->input('tutor', null);
-        $inscrito->colegio = $request->input('colegio', null);
+        $inscrito->area_id       = $validated['area_id'];
+        $inscrito->grupo_nombre  = $validated['grupo_nombre'] ?? null;
+        $inscrito->max_integrantes = 10;
 
-        // Mapear integrantes a columnas estudiante*, ci*, tutor*, telefono*, curso*
+        // Tutor y UE
+        $inscrito->tutor_paterno = $request->input('tutor_paterno');
+        $inscrito->tutor_materno = $request->input('tutor_materno');
+        $inscrito->tutor_nombre  = $request->input('tutor_nombre');
+        $inscrito->tutor_celular = $request->input('tutor_celular');
+        $inscrito->tutor_correo  = $request->input('tutor_correo');
+        $inscrito->colegio       = $request->input('colegio');
+        $inscrito->ciudad        = $request->input('ciudad');
+
+        // Mapear integrantes
         foreach ($validated['integrantes'] as $idx => $data) {
             $pos = $idx + 1;
-            $inscrito->{"estudiante{$pos}"} = $data['nombre'];
-            $inscrito->{"ci{$pos}"}         = $data['ci'];
-            $inscrito->{"tutor{$pos}"}      = $data['tutor'] ?? null;
-            $inscrito->{"telefono{$pos}"}   = $data['telefono'] ?? null;
-            $inscrito->{"curso{$pos}"}      = $data['curso'];
+            $inscrito->{"estudiante_paterno{$pos}"} = $data['apellidos'] ?? null; // APELLIDOS (campo de migración: *_paterno)
+            $inscrito->{"estudiante_nombre{$pos}"}  = $data['nombres']   ?? null;
+            $inscrito->{"ci{$pos}"}                 = $data['ci']        ?? null;
+            $inscrito->{"telefono{$pos}"}           = $data['telefono']  ?? null;
+            $inscrito->{"curso{$pos}"}              = $data['curso']     ?? null;
+            // si quieres guardar tutor por estudiante: $inscrito->{"tutor{$pos}"} = $data['tutor'] ?? null;
         }
 
-        // Comprobante (pago1) opcional
         if ($request->hasFile('pago1')) {
-            $path = $request->file('pago1')->store('comprobantes', 'public'); // storage/app/public/comprobantes
-            $inscrito->pago1 = $path; // en tu migración pago1 es string -> guarda la ruta
+            $inscrito->pago1 = $request->file('pago1')->store('comprobantes', 'public');
+        }
+
+        $inscrito->save();
+
+        return response()->json(['message' => 'Inscripción registrada correctamente', 'inscrito' => $inscrito], 201);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $inscrito = Inscrito::findOrFail($id);
+
+        $areaId = $request->input('area_id', $inscrito->area_id);
+        $area   = Area::findOrFail($areaId);
+
+        // Cursos permitidos
+        $validCursos = [];
+        for ($i = 1; $i <= 6; $i++) {
+            if (!empty($area->{"curso{$i}"})) $validCursos[] = $area->{"curso{$i}"};
+        }
+
+        $min = max(1, (int)($area->min_integrantes ?? 1));
+        $max = max($min, (int)($area->max_integrantes ?? 10));
+
+        $validated = $request->validate([
+            'area_id'      => ['required', 'exists:areas,id'],
+            'grupo_nombre' => ['nullable', 'string', 'max:255'],
+
+            'tutor_paterno' => ['nullable', 'string', 'max:255'],
+            'tutor_materno' => ['nullable', 'string', 'max:255'],
+            'tutor_nombre'  => ['nullable', 'string', 'max:255'],
+            'tutor_celular' => ['nullable', 'string', 'max:30'],
+            'tutor_correo'  => ['nullable', 'email', 'max:255'],
+            'colegio'       => ['nullable', 'string', 'max:255'],
+            'ciudad'        => ['nullable', 'string', 'max:255'],
+
+            'integrantes'            => ['required', 'array', "min:{$min}", "max:{$max}"],
+            'integrantes.*.apellidos'=> ['required', 'string', 'max:255'],
+            'integrantes.*.nombres'  => ['required', 'string', 'max:255'],
+            'integrantes.*.ci'       => ['required', 'string', 'max:20'],
+            'integrantes.*.telefono' => ['nullable', 'string', 'max:20'],
+            'integrantes.*.curso'    => ['required', 'string', Rule::in($validCursos)],
+
+            'pago1' => ['nullable', 'file', 'max:5120', 'mimes:png,jpg,jpeg,pdf'],
+        ], [
+            'integrantes.min' => "Debes registrar al menos {$min} integrante(s) para esta área.",
+            'integrantes.max' => "Máximo {$max} integrante(s) para esta área.",
+        ]);
+
+        // Validación 3 áreas por CI (excluyendo este registro)
+        $ciList = collect($validated['integrantes'])->pluck('ci')->unique()->values();
+        foreach ($ciList as $ci) {
+            $areasActuales = Inscrito::query()
+                ->where('id', '<>', $inscrito->id)
+                ->where(function ($q) use ($ci) {
+                    for ($i = 1; $i <= 10; $i++) $q->orWhere("ci{$i}", $ci);
+                })
+                ->distinct('area_id')
+                ->pluck('area_id')
+                ->toArray();
+
+            if (!in_array((int)$areaId, $areasActuales, true) && count($areasActuales) >= $this->MAX_AREAS) {
+                return response()->json(['message' => "El CI {$ci} ya alcanzó el máximo de {$this->MAX_AREAS} áreas permitidas."], 422);
+            }
+        }
+
+        // Base
+        $inscrito->area_id        = $areaId;
+        $inscrito->grupo_nombre   = $validated['grupo_nombre'] ?? null;
+
+        // Tutor/UE
+        $inscrito->tutor_paterno = $request->input('tutor_paterno');
+        $inscrito->tutor_materno = $request->input('tutor_materno');
+        $inscrito->tutor_nombre  = $request->input('tutor_nombre');
+        $inscrito->tutor_celular = $request->input('tutor_celular');
+        $inscrito->tutor_correo  = $request->input('tutor_correo');
+        $inscrito->colegio       = $request->input('colegio');
+        $inscrito->ciudad        = $request->input('ciudad');
+
+        // Limpiar slots
+        for ($i = 1; $i <= 10; $i++) {
+            $inscrito->{"estudiante_nombre{$i}"}  = null;
+            $inscrito->{"estudiante_paterno{$i}"} = null;
+            $inscrito->{"ci{$i}"} = null;
+            $inscrito->{"tutor{$i}"} = null;
+            $inscrito->{"telefono{$i}"} = null;
+            $inscrito->{"curso{$i}"} = null;
+        }
+
+        // Re-mapear
+        foreach ($validated['integrantes'] as $idx => $data) {
+            $pos = $idx + 1;
+            $inscrito->{"estudiante_paterno{$pos}"} = $data['apellidos'] ?? null;
+            $inscrito->{"estudiante_nombre{$pos}"}  = $data['nombres']   ?? null;
+            $inscrito->{"ci{$pos}"}                 = $data['ci']        ?? null;
+            $inscrito->{"telefono{$pos}"}           = $data['telefono']  ?? null;
+            $inscrito->{"curso{$pos}"}              = $data['curso']     ?? null;
+        }
+
+        if ($request->hasFile('pago1')) {
+            if ($inscrito->pago1) Storage::disk('public')->delete($inscrito->pago1);
+            $inscrito->pago1 = $request->file('pago1')->store('comprobantes', 'public');
         }
 
         $inscrito->save();
 
         return response()->json([
-            'message' => 'Inscripción registrada correctamente',
-            'inscrito' => $inscrito
-        ], 201);
+            'message' => 'Inscripción actualizada correctamente',
+            'data' => $inscrito->load('area')
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $inscrito = Inscrito::findOrFail($id);
+        $inscrito->delete();
+        return response()->json(['message' => 'Inscrito eliminado correctamente']);
     }
 }

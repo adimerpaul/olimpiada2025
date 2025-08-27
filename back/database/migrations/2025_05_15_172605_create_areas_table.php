@@ -31,6 +31,7 @@ return new class extends Migration
             $table->text('lugar')->nullable();
             $table->string('modalidad')->nullable();
             $table->text('inscripcion')->nullable();
+            $table->text('participacion')->nullable();
 
             // NUEVO: cupos por grado y reglas especiales
             // Requiere MySQL 5.7+/MariaDB 10.2+ para JSON. Si usas versión menor, cambia a text().
