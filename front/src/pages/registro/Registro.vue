@@ -137,13 +137,20 @@
                     <q-btn
                       unelevated color="primary" icon="person_add" label="Agregar"
                       @click="agregarIntegrante"
-                      :disable="!selectedArea || integrantes.length >= 10"
+                      :disable="!selectedArea || integrantes.length >= maxIntegrantes"
                     />
                   </div>
 
+                  <!-- Banner dinámico por área -->
                   <q-banner v-if="selectedArea" class="q-mt-sm bg-grey-1">
                     <template #avatar><q-icon name="info" color="primary" /></template>
-                    Puedes registrar hasta <b>10</b> integrantes por grupo. Los <b>cursos</b> dependen del área seleccionada.
+                    Puedes registrar
+                    <b v-if="minIntegrantes && minIntegrantes > 0">{{ minIntegrantes }}</b>
+                    <span v-if="minIntegrantes && minIntegrantes > 0"> a </span>
+                    <b>{{ maxIntegrantes }}</b>
+                    integrantes por grupo.
+                    <span v-if="selectedArea.grupo_mismo_curso"> Todos los integrantes deben ser del mismo curso.</span>
+                    Los <b>cursos</b> dependen del área seleccionada.
                   </q-banner>
 
                   <q-slide-transition>
@@ -205,7 +212,7 @@
                     <q-btn
                       label="Registrar" type="submit" color="primary" unelevated
                       :loading="submitting"
-                      :disable="!selectedArea || integrantes.length === 0"
+                      :disable="!selectedArea || integrantes.length < minIntegrantes"
                     />
                     <q-btn label="Limpiar" flat color="grey-7" @click="resetForm" />
                   </div>
@@ -250,7 +257,7 @@ export default {
       ciudad: '',
 
       integrantes: [],
-      maxAreas: 3
+      maxAreas: 3   // máximo de áreas por CI (regla por persona)
     }
   },
   computed: {
@@ -264,6 +271,15 @@ export default {
         if (v) cursos.push({ label: v })
       }
       return cursos
+    },
+    // ⬇️ límites por área
+    maxIntegrantes () {
+      const m = Number(this.selectedArea?.max_integrantes)
+      return Number.isFinite(m) && m > 0 ? m : 10
+    },
+    minIntegrantes () {
+      const m = Number(this.selectedArea?.min_integrantes)
+      return Number.isFinite(m) && m > 0 ? m : 1
     },
     req () { return v => !!v || 'Obligatorio' }
   },
@@ -291,7 +307,7 @@ export default {
     },
     agregarIntegrante () {
       if (!this.selectedArea) return
-      if (this.integrantes.length >= 10) return
+      if (this.integrantes.length >= this.maxIntegrantes) return
       this.integrantes.push({ apellidos: '', nombres: '', ci: '', telefono: '', curso: '', _areasCount: undefined })
     },
     quitarIntegrante (idx) { this.integrantes.splice(idx, 1) },
@@ -306,16 +322,7 @@ export default {
         }
       } catch { this.$q.notify({ type: 'warning', message: 'No se pudo verificar áreas del CI' }) }
     },
-    async onSubmit () {
-      if (!this.selectedAreaId || this.integrantes.length === 0) {
-        this.$q.notify({ type: 'negative', message: 'Completa área e integrantes' }); return
-      }
-      for (const al of this.integrantes) {
-        if ((al._areasCount ?? 0) >= this.maxAreas) {
-          this.$q.notify({ type: 'negative', message: `El CI ${al.ci} superó el máximo de áreas` }); return
-        }
-      }
-
+    async submitForm(){
       const fd = new FormData()
       fd.append('area_id', this.selectedAreaId)
       if (this.grupoNombre) fd.append('grupo_nombre', this.grupoNombre)
@@ -341,7 +348,7 @@ export default {
 
       this.submitting = true
       try {
-        const resp = await this.$axios.post('/inscritos', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+        await this.$axios.post('/inscritos', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
         this.$q.notify({ type: 'positive', message: 'Inscripción registrada' })
 
         // PDF estilo "formulario escrito"
@@ -357,6 +364,51 @@ export default {
         const msg = e?.response?.data?.message || 'Error al registrar'
         this.$q.notify({ type: 'negative', message: msg })
       } finally { this.submitting = false }
+    },
+    async onSubmit () {
+      // Validaciones básicas
+      if (!this.selectedAreaId || this.integrantes.length === 0) {
+        this.$q.notify({ type: 'negative', message: 'Completa área e integrantes' }); return
+      }
+
+      // Validar mínimo y máximo por área
+      if (this.integrantes.length < this.minIntegrantes) {
+        this.$q.notify({ type: 'warning', message: `Debes registrar al menos ${this.minIntegrantes} integrante(s).` }); return
+      }
+      if (this.integrantes.length > this.maxIntegrantes) {
+        this.$q.notify({ type: 'warning', message: `Máximo permitido: ${this.maxIntegrantes} integrante(s) para esta área.` }); return
+      }
+
+      // Validar máximo de áreas por CI (regla individual)
+      for (const al of this.integrantes) {
+        if ((al._areasCount ?? 0) >= this.maxAreas) {
+          this.$q.notify({ type: 'negative', message: `El CI ${al.ci} superó el máximo de áreas` }); return
+        }
+      }
+
+      // Si el área exige mismo curso, verificar
+      if (this.selectedArea?.grupo_mismo_curso) {
+        const setCursos = new Set(this.integrantes.map(i => (i.curso || '').trim()).filter(Boolean))
+        if (setCursos.size > 1) {
+          this.$q.notify({ type: 'negative', message: 'Esta área exige que todos los integrantes sean del mismo curso.' }); return
+        }
+      }
+
+      // Confirmación
+      this.$q.dialog({
+        cancel: true,
+        html: true,
+        ok: { label: 'Sí, registrar', color: 'primary' },
+        message: `
+          <div class="text-h6">Confirmar Registro</div>
+          <div class="q-mt-sm">
+            Una vez registrado, no podrás modificar los datos.<br/>
+            <b>Nota:</b> Entregar el presente registro y realizar el pago de acuerdo a la convocatoria.
+          </div>
+        `,
+        color: 'primary',
+        persistent: true
+      }).onOk(() => this.submitForm())
     },
     resetForm () {
       this.selectedAreaId = null

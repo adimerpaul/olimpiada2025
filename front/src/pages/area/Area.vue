@@ -25,12 +25,14 @@
             <th>Cursos</th>
             <th>Fechas</th>
             <th>Lugar / Modalidad</th>
+            <th>Integrantes</th>
             <th>Acciones</th>
           </tr>
           </thead>
           <tbody>
           <tr v-for="a in rowsFiltered" :key="a.id">
             <td class="text-weight-medium">{{ a.area }}</td>
+
             <td>
               <q-chip
                 v-for="(label, key) in coursesFromRow(a)"
@@ -39,6 +41,7 @@
               </q-chip>
               <span v-if="!hasAnyCourse(a)" class="text-grey">—</span>
             </td>
+
             <td>
               <div v-if="a.fecha1 || a.titulo_fecha1">
                 <q-icon name="event" class="q-mr-xs" /> {{ a.titulo_fecha1 || 'Fecha 1' }}:
@@ -50,11 +53,25 @@
               </div>
               <span v-if="!a.fecha1 && !a.fecha2" class="text-grey">—</span>
             </td>
+
             <td>
               <div v-if="a.lugar"><q-icon name="place" class="q-mr-xs" /> {{ a.lugar }}</div>
               <div v-if="a.modalidad"><q-icon name="meeting_room" class="q-mr-xs" /> {{ a.modalidad }}</div>
               <span v-if="!a.lugar && !a.modalidad" class="text-grey">—</span>
             </td>
+
+            <td>
+              <div v-if="a.min_integrantes || a.max_integrantes">
+                <q-badge color="blue-8" text-color="white" class="q-mr-xs">
+                  {{ a.min_integrantes || 1 }} – {{ a.max_integrantes || 10 }}
+                </q-badge>
+              </div>
+              <q-chip v-if="a.grupo_mismo_curso" dense color="orange-9" text-color="white" icon="rule">
+                Mismo curso
+              </q-chip>
+              <span v-if="!a.min_integrantes && !a.max_integrantes && !a.grupo_mismo_curso" class="text-grey">—</span>
+            </td>
+
             <td class="text-right">
               <q-btn dense flat round icon="edit" color="primary" @click="openEdit(a)">
                 <q-tooltip>Editar</q-tooltip>
@@ -175,6 +192,27 @@
                 </div>
               </div>
 
+              <!-- Límites de integrantes y regla "mismo curso" -->
+              <div class="col-12">
+                <q-banner class="bg-grey-1 q-mb-sm">
+                  <template #avatar><q-icon name="group" color="primary" /></template>
+                  Límites de integrantes por grupo y regla de pertenecer al mismo curso.
+                </q-banner>
+                <div class="row q-col-gutter-sm">
+                  <div class="col-12 col-md-3">
+                    <q-input v-model.number="form.min_integrantes" type="number" :min="1" filled dense
+                             label="Mínimo integrantes" />
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <q-input v-model.number="form.max_integrantes" type="number" :min="1" filled dense
+                             label="Máximo integrantes" />
+                  </div>
+                  <div class="col-12 col-md-6 flex items-center">
+                    <q-toggle v-model="form.grupo_mismo_curso" label="Todos del mismo curso" />
+                  </div>
+                </div>
+              </div>
+
               <!-- Reglas especiales (JSON libre) -->
               <div class="col-12">
                 <q-input v-model="reglasString" type="textarea" filled autogrow
@@ -211,7 +249,10 @@ export default {
         titulo_fecha2: '', fecha2: '',
         lugar: '', modalidad: '', inscripcion: '',
         cupos_por_grado: null,
-        reglas_especiales: null
+        reglas_especiales: null,
+        min_integrantes: 1,
+        max_integrantes: 10,
+        grupo_mismo_curso: false
       },
       coursesToggles: { 1:false,2:false,3:false,4:false,5:false,6:false },
       cupos: { 1:null,2:null,3:null,4:null,5:null,6:null },
@@ -293,7 +334,10 @@ export default {
         modalidad: row.modalidad || '',
         inscripcion: row.inscripcion || '',
         cupos_por_grado: row.cupos_por_grado || null,
-        reglas_especiales: row.reglas_especiales || null
+        reglas_especiales: row.reglas_especiales || null,
+        min_integrantes: row.min_integrantes ?? 1,
+        max_integrantes: row.max_integrantes ?? 10,
+        grupo_mismo_curso: !!row.grupo_mismo_curso
       }
 
       // toggles cursos
@@ -317,7 +361,10 @@ export default {
         titulo_fecha2: '', fecha2: '',
         lugar: '', modalidad: '', inscripcion: '',
         cupos_por_grado: null,
-        reglas_especiales: null
+        reglas_especiales: null,
+        min_integrantes: 1,
+        max_integrantes: 10,
+        grupo_mismo_curso: false
       }
       this.coursesToggles = { 1:false,2:false,3:false,4:false,5:false,6:false }
       this.cupos = { 1:null,2:null,3:null,4:null,5:null,6:null }
@@ -349,11 +396,26 @@ export default {
         this.form.reglas_especiales = null
       }
 
+      // validar límites min/max
+      const minI = Number(this.form.min_integrantes ?? 1)
+      const maxI = Number(this.form.max_integrantes ?? 1)
+      if (!Number.isFinite(minI) || minI < 1) {
+        this.$q.notify({ type: 'warning', message: 'El mínimo de integrantes debe ser un número ≥ 1.' })
+        throw new Error('invalid_min')
+      }
+      if (!Number.isFinite(maxI) || maxI < minI) {
+        this.$q.notify({ type: 'warning', message: 'El máximo de integrantes debe ser ≥ al mínimo.' })
+        throw new Error('invalid_max')
+      }
+      this.form.min_integrantes = minI
+      this.form.max_integrantes = maxI
+
       // devolver copia limpia
       const {
         id, area, curso1,curso2,curso3,curso4,curso5,curso6,
         titulo_fecha1,fecha1,titulo_fecha2,fecha2,
-        lugar,modalidad,inscripcion, cupos_por_grado, reglas_especiales
+        lugar,modalidad,inscripcion, cupos_por_grado, reglas_especiales,
+        min_integrantes, max_integrantes, grupo_mismo_curso
       } = this.form
 
       const payload = {
@@ -361,7 +423,8 @@ export default {
         curso1,curso2,curso3,curso4,curso5,curso6,
         titulo_fecha1,fecha1,titulo_fecha2,fecha2,
         lugar,modalidad,inscripcion,
-        cupos_por_grado, reglas_especiales
+        cupos_por_grado, reglas_especiales,
+        min_integrantes, max_integrantes, grupo_mismo_curso
       }
       return { id, payload }
     },
