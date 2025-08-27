@@ -27,7 +27,6 @@
 
               <q-card-section>
                 <q-form @submit.prevent="onSubmit" ref="formRef">
-
                   <!-- Área -->
                   <div class="row q-col-gutter-md">
                     <div class="col-12 col-md-6">
@@ -72,34 +71,14 @@
                             {{ selectedArea.modalidad }}
                           </div>
                         </div>
-<!--                        <div class="col-auto" v-if="selectedArea.fecha2">-->
-<!--                          <q-chip icon="event" color="secondary" text-color="white" square>-->
-<!--                            {{ selectedArea.titulo_fecha2 || 'Fecha 2' }}: {{ formatDate(selectedArea.fecha2) }}-->
-<!--                          </q-chip>-->
-<!--                        </div>-->
-<!--                        <div class="col-auto" v-if="selectedArea.lugar">-->
-<!--                          <q-chip icon="place" color="teal" text-color="white" square>-->
-<!--                            {{ selectedArea.lugar }}-->
-<!--                          </q-chip>-->
-<!--                        </div>-->
-<!--                        <div class="col-auto" v-if="selectedArea.modalidad">-->
-<!--                          <q-chip icon="meeting_room" color="indigo" text-color="white" square>-->
-<!--                            {{ selectedArea.modalidad }}-->
-<!--                          </q-chip>-->
-<!--                        </div>-->
                       </div>
                     </div>
                   </div>
 
-                  <!-- Nombre de grupo + comprobante -->
+                  <!-- Grupo + comprobante -->
                   <div class="row q-col-gutter-md q-mt-sm">
                     <div class="col-12 col-md-6">
-                      <q-input
-                        v-model="grupoNombre"
-                        label="Nombre del Grupo (opcional)"
-                        filled dense
-                        maxlength="255"
-                      >
+                      <q-input v-model="grupoNombre" label="Nombre del Grupo (opcional)" filled dense maxlength="255">
                         <template #prepend><q-icon name="badge" /></template>
                       </q-input>
                     </div>
@@ -107,28 +86,46 @@
                       <q-file
                         v-model="pagoFile"
                         label="Comprobante de pago (png/jpg/pdf, máx 5MB)"
-                        filled dense
-                        :counter="true"
-                        accept=".png,.jpg,.jpeg,.pdf"
-                        clearable
+                        filled dense :counter="true"
+                        accept=".png,.jpg,.jpeg,.pdf" clearable
                       >
                         <template #prepend><q-icon name="attach_file" /></template>
-                        <template #append>
-                          <q-icon name="info" class="cursor-pointer">
-                            <q-tooltip>Adjunta una imagen o PDF del pago</q-tooltip>
-                          </q-icon>
-                        </template>
                       </q-file>
                     </div>
-                    <div class="col-12 col-md-6">
-                      <q-input v-model="tutor" label="Nombre del Tutor " filled dense maxlength="255">
-                        <template #prepend><q-icon name="person" /></template>
-                      </q-input>
+                  </div>
+
+                  <!-- DATOS DEL PROFESOR(A) TUTOR(A) -->
+                  <div class="q-mt-md">
+                    <div class="text-subtitle2 text-weight-bold q-mb-sm">Datos del Profesor(a) Tutor(a)</div>
+                    <div class="row q-col-gutter-md">
+                      <div class="col-12 col-md-4">
+                        <q-input v-model="tutor_paterno" label="Apellido paterno" filled dense :rules="[req]" />
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <q-input v-model="tutor_materno" label="Apellido materno" filled dense />
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <q-input v-model="tutor_nombre" label="Nombres" filled dense :rules="[req]" />
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <q-input v-model="tutor_celular" label="Celular" filled dense />
+                      </div>
+                      <div class="col-12 col-md-8">
+                        <q-input v-model="tutor_correo" label="Correo (Gmail)" type="email" filled dense />
+                      </div>
                     </div>
-                    <div class="col-12 col-md-6">
-                      <q-input v-model="colegio" label="Colegio " filled dense maxlength="255">
-                        <template #prepend><q-icon name="school" /></template>
-                      </q-input>
+                  </div>
+
+                  <!-- DATOS UNIDAD EDUCATIVA -->
+                  <div class="q-mt-md">
+                    <div class="text-subtitle2 text-weight-bold q-mb-sm">Unidad Educativa</div>
+                    <div class="row q-col-gutter-md">
+                      <div class="col-12 col-md-8">
+                        <q-input v-model="colegio" label="Nombre de la unidad educativa" filled dense :rules="[req]" />
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <q-input v-model="ciudad" label="Localidad / Ciudad" filled dense />
+                      </div>
                     </div>
                   </div>
 
@@ -155,10 +152,10 @@
                         <thead>
                         <tr>
                           <th>#</th>
-                          <th>Nombre</th>
+                          <th>Apellidos</th>
+                          <th>Nombres</th>
                           <th>CI</th>
-<!--                          <th>Tutor</th>-->
-                          <th>Celular</th>
+                          <th>Teléfono</th>
                           <th>Curso</th>
                           <th></th>
                         </tr>
@@ -166,14 +163,14 @@
                         <tbody>
                         <tr v-for="(al, idx) in integrantes" :key="idx">
                           <td class="text-grey-7">{{ idx + 1 }}</td>
-                          <td style="min-width:200px">
-                            <q-input dense filled v-model="al.nombre" :rules="[req]" />
+                          <td style="min-width:180px">
+                            <q-input dense filled v-model="al.apellidos" :rules="[req]" />
+                          </td>
+                          <td style="min-width:180px">
+                            <q-input dense filled v-model="al.nombres" :rules="[req]" />
                           </td>
                           <td style="min-width:140px">
-                            <q-input
-                              dense filled v-model="al.ci" :rules="[req]"
-                              @blur="checkAreasPorCi(idx)"
-                            >
+                            <q-input dense filled v-model="al.ci" :rules="[req]" @blur="checkAreasPorCi(idx)">
                               <template #append>
                                 <q-icon
                                   v-if="al._areasCount !== undefined"
@@ -183,18 +180,15 @@
                               </template>
                             </q-input>
                           </td>
-<!--                          <td><q-input dense filled v-model="al.tutor" /></td>-->
                           <td style="min-width:130px">
-                            <q-input dense filled v-model="al.telefono" hint="" />
+                            <q-input dense filled v-model="al.telefono" />
                           </td>
-                          <td style="min-width:170px">
+                          <td style="min-width:160px">
                             <q-select
                               dense filled v-model="al.curso"
                               :options="allowedCourses"
                               option-value="label" option-label="label"
-                              emit-value
-                              map-options
-                              :rules="[req]"
+                              emit-value map-options :rules="[req]"
                             />
                           </td>
                           <td class="text-right">
@@ -209,10 +203,7 @@
                   <!-- Botones -->
                   <div class="row q-mt-lg q-gutter-sm">
                     <q-btn
-                      label="Registrar"
-                      type="submit"
-                      color="primary"
-                      unelevated
+                      label="Registrar" type="submit" color="primary" unelevated
                       :loading="submitting"
                       :disable="!selectedArea || integrantes.length === 0"
                     />
@@ -233,7 +224,7 @@
 </template>
 
 <script>
-import {generarPDFInscripcion} from "src/utils/inscripcion-pdf.js";
+import { generarPDFInscripcionMat } from "src/utils/inscripcion-pdf.js";
 
 export default {
   name: 'RegistroGrupo',
@@ -245,22 +236,26 @@ export default {
 
       selectedAreaId: null,
       grupoNombre: '',
-      tutor: '',
-      colegio: '',
       pagoFile: null,
 
-      integrantes: [],
+      // Tutor
+      tutor_paterno: '',
+      tutor_materno: '',
+      tutor_nombre: '',
+      tutor_celular: '',
+      tutor_correo: '',
 
-      maxAreas: 3 // tope por CI
+      // Unidad educativa
+      colegio: '',
+      ciudad: '',
+
+      integrantes: [],
+      maxAreas: 3
     }
   },
   computed: {
-    areaOptions () {
-      return this.areas
-    },
-    selectedArea () {
-      return this.areas.find(a => a.id === this.selectedAreaId) || null
-    },
+    areaOptions () { return this.areas },
+    selectedArea () { return this.areas.find(a => a.id === this.selectedAreaId) || null },
     allowedCourses () {
       if (!this.selectedArea) return []
       const cursos = []
@@ -270,13 +265,9 @@ export default {
       }
       return cursos
     },
-    req () {
-      return (v) => !!v || 'Obligatorio'
-    }
+    req () { return v => !!v || 'Obligatorio' }
   },
-  mounted () {
-    this.fetchAreas()
-  },
+  mounted () { this.fetchAreas() },
   methods: {
     formatDate (iso) {
       if (!iso) return ''
@@ -291,11 +282,8 @@ export default {
       try {
         const { data } = await this.$axios.get('/areas')
         this.areas = data || []
-      } catch (e) {
-        this.$q.notify({ type: 'negative', message: 'No se pudieron cargar las áreas' })
-      } finally {
-        this.loadingAreas = false
-      }
+      } catch { this.$q.notify({ type: 'negative', message: 'No se pudieron cargar las áreas' }) }
+      finally { this.loadingAreas = false }
     },
     onAreaChange () {
       this.integrantes = []
@@ -304,88 +292,79 @@ export default {
     agregarIntegrante () {
       if (!this.selectedArea) return
       if (this.integrantes.length >= 10) return
-      this.integrantes.push({ nombre: '', ci: '', tutor: '', telefono: '', curso: '', _areasCount: undefined })
+      this.integrantes.push({ apellidos: '', nombres: '', ci: '', telefono: '', curso: '', _areasCount: undefined })
     },
-    quitarIntegrante (idx) {
-      this.integrantes.splice(idx, 1)
-    },
+    quitarIntegrante (idx) { this.integrantes.splice(idx, 1) },
     async checkAreasPorCi (idx) {
       const ci = this.integrantes[idx]?.ci
       if (!ci) return
       try {
         const { data } = await this.$axios.get(`/inscritos/areas-por-ci/${encodeURIComponent(ci)}`)
-        // Vue 3: asignación directa
         this.integrantes[idx]._areasCount = Number(data?.areas ?? 0)
-
         if (this.integrantes[idx]._areasCount >= this.maxAreas) {
-          this.$q.notify({
-            type: 'warning',
-            message: `El CI ${ci} ya está en ${this.integrantes[idx]._areasCount} área(s). Máximo permitido: ${this.maxAreas}.`
-          })
+          this.$q.notify({ type: 'warning', message: `El CI ${ci} ya está en ${this.integrantes[idx]._areasCount} área(s). Máximo: ${this.maxAreas}.` })
         }
-      } catch {
-        this.$q.notify({ type: 'warning', message: 'No se pudo verificar áreas del CI' })
-      }
+      } catch { this.$q.notify({ type: 'warning', message: 'No se pudo verificar áreas del CI' }) }
     },
     async onSubmit () {
-      // Validaciones simples front
       if (!this.selectedAreaId || this.integrantes.length === 0) {
-        this.$q.notify({ type: 'negative', message: 'Completa área e integrantes' })
-        return
+        this.$q.notify({ type: 'negative', message: 'Completa área e integrantes' }); return
       }
-      // Evitar intentar inscribir CI con tope superado (front)
       for (const al of this.integrantes) {
         if ((al._areasCount ?? 0) >= this.maxAreas) {
-          this.$q.notify({ type: 'negative', message: `El CI ${al.ci} superó el máximo de áreas` })
-          return
+          this.$q.notify({ type: 'negative', message: `El CI ${al.ci} superó el máximo de áreas` }); return
         }
       }
 
-      // Armar FormData para subir archivo + JSON
       const fd = new FormData()
       fd.append('area_id', this.selectedAreaId)
       if (this.grupoNombre) fd.append('grupo_nombre', this.grupoNombre)
       if (this.pagoFile) fd.append('pago1', this.pagoFile)
-      if (this.tutor) fd.append('tutor', this.tutor)
-      if (this.colegio) fd.append('colegio', this.colegio)
 
-// En vez de enviar un JSON string:
+      // Tutor & UE
+      if (this.tutor_paterno) fd.append('tutor_paterno', this.tutor_paterno)
+      if (this.tutor_materno) fd.append('tutor_materno', this.tutor_materno)
+      if (this.tutor_nombre)  fd.append('tutor_nombre',  this.tutor_nombre)
+      if (this.tutor_celular) fd.append('tutor_celular', this.tutor_celular)
+      if (this.tutor_correo)  fd.append('tutor_correo',  this.tutor_correo)
+      if (this.colegio) fd.append('colegio', this.colegio)
+      if (this.ciudad)  fd.append('ciudad',  this.ciudad)
+
+      // Integrantes (compatibles con backend)
       this.integrantes.forEach((i, idx) => {
-        fd.append(`integrantes[${idx}][nombre]`, i.nombre)
+        fd.append(`integrantes[${idx}][apellidos]`, i.apellidos)
+        fd.append(`integrantes[${idx}][nombres]`, i.nombres)
         fd.append(`integrantes[${idx}][ci]`, i.ci)
-        fd.append(`integrantes[${idx}][tutor]`, i.tutor || '')
         fd.append(`integrantes[${idx}][telefono]`, i.telefono || '')
         fd.append(`integrantes[${idx}][curso]`, i.curso)
       })
 
       this.submitting = true
       try {
-        // Nota: En Laravel, como validamos array, haremos decode en el controller si viene como string
-        // (pero arriba ya validamos formato array; aquí enviamos JSON)
-        // Ajuste en controller: $integrantes = json_decode($request->input('integrantes','[]'), true);
-        const resp = await this.$axios.post('/inscritos', fd, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        })
+        const resp = await this.$axios.post('/inscritos', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
         this.$q.notify({ type: 'positive', message: 'Inscripción registrada' })
-        generarPDFInscripcion({
-          inscrito: resp.data?.inscrito || {},
-          area: this.selectedArea,
-          integrantes: this.integrantes,
-          baseUrl: window.location.origin,
-          assets: { left: '/images.png', right: '/logo_fni.png' }
+
+        // PDF estilo "formulario escrito"
+        generarPDFInscripcionMat({
+          tutor: { paterno: this.tutor_paterno, materno: this.tutor_materno, nombres: this.tutor_nombre, celular: this.tutor_celular, email: this.tutor_correo },
+          colegio: { nombre: this.colegio, localidad: this.ciudad },
+          grado: [...new Set(this.integrantes.map(i => i.curso))].join(', '),
+          estudiantes: this.integrantes.map(i => ({ apellidos: i.apellidos, nombres: i.nombres, carnet: i.ci }))
         })
+
         this.resetForm()
       } catch (e) {
         const msg = e?.response?.data?.message || 'Error al registrar'
         this.$q.notify({ type: 'negative', message: msg })
-      } finally {
-        this.submitting = false
-      }
+      } finally { this.submitting = false }
     },
     resetForm () {
       this.selectedAreaId = null
       this.grupoNombre = ''
       this.pagoFile = null
+      this.tutor_paterno = this.tutor_materno = this.tutor_nombre = ''
+      this.tutor_celular = this.tutor_correo = ''
+      this.colegio = this.ciudad = ''
       this.integrantes = []
     }
   }
