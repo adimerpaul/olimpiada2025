@@ -120,6 +120,16 @@
                         </template>
                       </q-file>
                     </div>
+                    <div class="col-12 col-md-6">
+                      <q-input v-model="tutor" label="Nombre del Tutor " filled dense maxlength="255">
+                        <template #prepend><q-icon name="person" /></template>
+                      </q-input>
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <q-input v-model="colegio" label="Colegio " filled dense maxlength="255">
+                        <template #prepend><q-icon name="school" /></template>
+                      </q-input>
+                    </div>
                   </div>
 
                   <!-- Integrantes -->
@@ -147,8 +157,8 @@
                           <th>#</th>
                           <th>Nombre</th>
                           <th>CI</th>
-                          <th>Tutor</th>
-                          <th>Teléfono</th>
+<!--                          <th>Tutor</th>-->
+                          <th>Celular</th>
                           <th>Curso</th>
                           <th></th>
                         </tr>
@@ -173,8 +183,10 @@
                               </template>
                             </q-input>
                           </td>
-                          <td><q-input dense filled v-model="al.tutor" /></td>
-                          <td style="min-width:130px"><q-input dense filled v-model="al.telefono" /></td>
+<!--                          <td><q-input dense filled v-model="al.tutor" /></td>-->
+                          <td style="min-width:130px">
+                            <q-input dense filled v-model="al.telefono" hint="" />
+                          </td>
                           <td style="min-width:170px">
                             <q-select
                               dense filled v-model="al.curso"
@@ -233,6 +245,8 @@ export default {
 
       selectedAreaId: null,
       grupoNombre: '',
+      tutor: '',
+      colegio: '',
       pagoFile: null,
 
       integrantes: [],
@@ -332,6 +346,8 @@ export default {
       fd.append('area_id', this.selectedAreaId)
       if (this.grupoNombre) fd.append('grupo_nombre', this.grupoNombre)
       if (this.pagoFile) fd.append('pago1', this.pagoFile)
+      if (this.tutor) fd.append('tutor', this.tutor)
+      if (this.colegio) fd.append('colegio', this.colegio)
 
 // En vez de enviar un JSON string:
       this.integrantes.forEach((i, idx) => {

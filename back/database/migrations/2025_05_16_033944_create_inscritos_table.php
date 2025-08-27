@@ -26,7 +26,9 @@ return new class extends Migration
                 $table->string("curso{$i}")->nullable();
             }
 
-            $table->string('pago1')->nullable(); // Si pagaron inscripción
+            $table->string('pago1')->nullable();
+            $table->string('tutor')->nullable();
+            $table->string('colegio')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

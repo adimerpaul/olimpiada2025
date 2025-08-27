@@ -251,6 +251,8 @@ class InscritoController extends Controller{
         $inscrito->area_id = $validated['area_id'];
         $inscrito->grupo_nombre = $validated['grupo_nombre'] ?? null;
         $inscrito->max_integrantes = 10; // o $area->max_integrantes si lo agregas a areas
+        $inscrito->tutor = $request->input('tutor', null);
+        $inscrito->colegio = $request->input('colegio', null);
 
         // Mapear integrantes a columnas estudiante*, ci*, tutor*, telefono*, curso*
         foreach ($validated['integrantes'] as $idx => $data) {

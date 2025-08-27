@@ -16,6 +16,8 @@ class Inscrito extends Model{
         'grupo_nombre',
         'max_integrantes',
         'pago1',
+        'tutor',
+        'colegio',
         // Campos dinámicos para los 10 estudiantes
         'estudiante1', 'ci1', 'tutor1', 'telefono1', 'curso1',
         'estudiante2', 'ci2', 'tutor2', 'telefono2', 'curso2',
