@@ -82,7 +82,7 @@
                         <template #prepend><q-icon name="badge" /></template>
                       </q-input>
                     </div>
-                    <div class="col-12 col-md-6">
+                    <!-- <div class="col-12 col-md-6">
                       <q-file
                         v-model="pagoFile"
                         label="Comprobante de pago (png/jpg/pdf, máx 5MB)"
@@ -91,7 +91,7 @@
                       >
                         <template #prepend><q-icon name="attach_file" /></template>
                       </q-file>
-                    </div>
+                    </div> -->
                   </div>
 
                   <!-- DATOS DEL PROFESOR(A) TUTOR(A) -->
