@@ -115,6 +115,7 @@
           </tr>
           </tfoot>
         </q-markup-table>
+<!--        <pre>{{ rowsFiltered }}</pre>-->
       </q-card-section>
 
       <q-inner-loading :showing="loading">
@@ -281,6 +282,8 @@ export default {
           r.id,
           r.grupo_nombre,
           r.area?.area,
+          // colegio
+          r.colegio || '',
           (r._integrantes || []).map(i =>
             `${i.apellidos || ''} ${i.nombres || ''} ${i.ci || ''} ${i.curso || ''}`
           ).join(' ')
@@ -324,12 +327,16 @@ export default {
         const grupo = r.grupo_nombre || ''
         const comp = r.pago1 ? this.fileUrl(r.pago1) : ''
 
+        // 🔧 tomar colegio desde r.colegio (o donde lo tengas)
+        const colegio = r.colegio || ''
+
         ;(r._integrantes || []).forEach((i, idx) => {
           out.push({
             id: r.id,                 // id de la inscripción
             nro: idx + 1,             // nro del integrante dentro del grupo
             area,
             grupo,
+            colegio,                  // ✅ ahora sí
             alumno: this.fullName(i),
             ci: i.ci || '',
             curso: i.curso || '',
@@ -502,7 +509,7 @@ export default {
       if (!alumnos.length) return
 
       const headers = [
-        'ID inscripción', 'Nº', 'Área', 'Grupo',
+        'ID inscripción', 'Nº', 'Área', 'Grupo','Colegio',
         'Alumno', 'CI', 'Curso', 'Tutor', 'Teléfono',
         'Fecha', 'ComprobanteURL'
       ]
@@ -510,7 +517,7 @@ export default {
 
       alumnos.forEach(a => {
         const line = [
-          a.id, a.nro, a.area, a.grupo,
+          a.id, a.nro, a.area, a.grupo, a.colegio,
           a.alumno, a.ci, a.curso, a.tutor, a.telefono,
           a.fecha, a.comprobante
         ].map(v => `"${String(v).replace(/"/g, '""')}"`)
