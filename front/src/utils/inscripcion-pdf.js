@@ -7,6 +7,7 @@ export function generarPDFInscripcionMat (opts = {}) {
   const tutor       = opts.tutor || {}
   const colegio     = opts.colegio || {}
   const grado       = opts.grado || ''
+  const areaNombre  = String(opts.areaNombre || 'MATEMÁTICA').toUpperCase()
   // ⬇️ sin tope (imprime todos); si quieres limitar a 10, usa .slice(0, 10)
   const estudiantes = Array.isArray(opts.estudiantes) ? opts.estudiantes : []
 
@@ -31,7 +32,7 @@ export function generarPDFInscripcionMat (opts = {}) {
   doc.text('OLIMPIADAS DE CIENCIA Y TECNOLOGÍA F.N.I.', W / 2, y, { align: 'center' })
   y += 6
   doc.setFont('helvetica', 'bold')
-  doc.text('OLIMPIADA MATEMÁTICA “FUNDACIÓN DE ORURO”', W / 2, y, { align: 'center' })
+  doc.text(`OLIMPIADA DE ${areaNombre}`, W / 2, y, { align: 'center' })
 
   y += 7
   doc.setFontSize(10)
@@ -212,8 +213,9 @@ export function generarPDFInscripcionMat (opts = {}) {
   doc.text('Lugar y Fecha:', L, y)
   drawUnderlinedField(L + 24, y + 2, W - R - (L + 24))
 
-  // Guardar
-  doc.save('formulario_olim_matematica.pdf')
+  // Guardar (nombre de archivo según el área)
+  const slug = areaNombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_')
+  doc.save(`formulario_olim_${slug}.pdf`)
 }
 
 export async function generarPDFInscripcion ({

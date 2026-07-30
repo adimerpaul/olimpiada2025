@@ -353,6 +353,7 @@ export default {
 
         // PDF estilo "formulario escrito"
         generarPDFInscripcionMat({
+          areaNombre: this.selectedArea?.area || '',
           tutor: { paterno: this.tutor_paterno, materno: this.tutor_materno, nombres: this.tutor_nombre, celular: this.tutor_celular, email: this.tutor_correo },
           colegio: { nombre: this.colegio, localidad: this.ciudad },
           grado: [...new Set(this.integrantes.map(i => i.curso))].join(', '),
