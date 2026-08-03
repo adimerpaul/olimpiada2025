@@ -69,6 +69,10 @@
                     <q-item-section avatar><q-icon name="print" /></q-item-section>
                     <q-item-section>Imprimir Constancia</q-item-section>
                   </q-item>
+                  <q-item clickable @click="reimprimirFormulario(row)" v-close-popup>
+                    <q-item-section avatar><q-icon name="description" /></q-item-section>
+                    <q-item-section>Reimprimir Formulario</q-item-section>
+                  </q-item>
                 </q-list>
               </q-btn-dropdown>
             </td>
@@ -242,7 +246,7 @@
 </template>
 
 <script>
-import { generarPDFInscripcion } from "src/utils/inscripcion-pdf.js";
+import { generarPDFInscripcion, generarPDFInscripcionMat } from "src/utils/inscripcion-pdf.js";
 
 export default {
   name: 'Inscritos',
@@ -483,6 +487,41 @@ export default {
         })
       } catch (e) {
         this.$q.notify({ type: 'negative', message: 'No se pudo generar la constancia' })
+      }
+    },
+    // Reimprime el mismo formulario escrito que se genera al registrarse,
+    // ya llenado con los datos guardados de la inscripción.
+    reimprimirFormulario (row) {
+      const r = this.normalizeRow(row)
+      const area = r.area || this.areas.find(a => a.id === r.area_id) || {}
+      const integrantes = r._integrantes || []
+
+      if (!integrantes.length) {
+        this.$q.notify({ type: 'warning', message: 'La inscripción no tiene integrantes registrados' })
+        return
+      }
+
+      try {
+        generarPDFInscripcionMat({
+          areaNombre: area.area || '',
+          tutor: {
+            paterno: r.tutor_paterno || '',
+            materno: r.tutor_materno || '',
+            nombres: r.tutor_nombre || '',
+            celular: r.tutor_celular || '',
+            email: r.tutor_correo || ''
+          },
+          colegio: { nombre: r.colegio || '', localidad: r.ciudad || '' },
+          grado: [...new Set(integrantes.map(i => i.curso).filter(Boolean))].join(', '),
+          estudiantes: integrantes.map(i => ({
+            apellidos: i.apellidos,
+            nombres: i.nombres,
+            carnet: i.ci
+          })),
+          nombreArchivo: `formulario_inscripcion_${r.id}.pdf`
+        })
+      } catch (e) {
+        this.$q.notify({ type: 'negative', message: 'No se pudo generar el formulario' })
       }
     },
     confirmDelete (row) {

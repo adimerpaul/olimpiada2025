@@ -3,11 +3,42 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import QRCode from 'qrcode'
 
+// Leyenda del encabezado según el área. La clave se normaliza (sin acentos,
+// sin paréntesis) con normalizarArea(); si el área no está aquí se usa LEYENDA_GENERICA.
+const LEYENDAS_POR_AREA = {
+  'MATEMATICA': 'EL CONTENIDO ES ACUMULATIVO. CADA PROBLEMA DE OLIMPIADA PUEDE ABARCAR DOS O MÁS TEMAS DEL CONTENIDO Y HACE ÉNFASIS EN EL RAZONAMIENTO MATEMÁTICO.',
+  'FISICA': 'EL CONTENIDO ES ACUMULATIVO. CADA PROBLEMA DE OLIMPIADA PUEDE ABARCAR DOS O MÁS TEMAS DEL CONTENIDO Y HACE ÉNFASIS EN EL RAZONAMIENTO FÍSICO.',
+  'QUIMICA TEORICA': 'EL CONTENIDO ES ACUMULATIVO. CADA PROBLEMA DE OLIMPIADA PUEDE ABARCAR DOS O MÁS TEMAS DEL CONTENIDO Y HACE ÉNFASIS EN EL RAZONAMIENTO QUÍMICO.',
+  'QUIMICA EXPERIMENTAL': 'EL CONTENIDO ES ACUMULATIVO. CADA PRÁCTICA DE OLIMPIADA PUEDE ABARCAR DOS O MÁS TEMAS DEL CONTENIDO Y HACE ÉNFASIS EN EL TRABAJO EXPERIMENTAL DE LABORATORIO.',
+  'BIOLOGIA': 'EL CONTENIDO ES ACUMULATIVO. CADA PROBLEMA DE OLIMPIADA PUEDE ABARCAR DOS O MÁS TEMAS DEL CONTENIDO Y HACE ÉNFASIS EN EL RAZONAMIENTO BIOLÓGICO.',
+  'MEDIO AMBIENTE': 'EL CONTENIDO ES ACUMULATIVO. CADA PROBLEMA DE OLIMPIADA PUEDE ABARCAR DOS O MÁS TEMAS DEL CONTENIDO Y HACE ÉNFASIS EN EL ANÁLISIS Y LA SOLUCIÓN DE PROBLEMAS AMBIENTALES.',
+  'GEOGRAFIA': 'EL CONTENIDO ES ACUMULATIVO. CADA PROBLEMA DE OLIMPIADA PUEDE ABARCAR DOS O MÁS TEMAS DEL CONTENIDO Y HACE ÉNFASIS EN EL RAZONAMIENTO GEOGRÁFICO Y LA INTERPRETACIÓN DE MAPAS.',
+  'ASTRONOMIA Y ASTROFISICA': 'EL CONTENIDO ES ACUMULATIVO. CADA PROBLEMA DE OLIMPIADA PUEDE ABARCAR DOS O MÁS TEMAS DEL CONTENIDO Y HACE ÉNFASIS EN EL RAZONAMIENTO ASTRONÓMICO Y ASTROFÍSICO.',
+  'ENERGIAS': 'EL CONTENIDO ES ACUMULATIVO. CADA PROBLEMA DE OLIMPIADA PUEDE ABARCAR DOS O MÁS TEMAS DEL CONTENIDO Y HACE ÉNFASIS EN EL USO EFICIENTE DE LA ENERGÍA Y LAS FUENTES ALTERNATIVAS.',
+  'PROGRAMACION': 'EL CONTENIDO ES ACUMULATIVO. CADA PROBLEMA DE OLIMPIADA PUEDE ABARCAR DOS O MÁS TEMAS DEL CONTENIDO Y HACE ÉNFASIS EN EL RAZONAMIENTO LÓGICO Y ALGORÍTMICO.',
+  'REDES Y CIBERSEGURIDAD': 'EL CONTENIDO ES ACUMULATIVO. CADA PROBLEMA DE OLIMPIADA PUEDE ABARCAR DOS O MÁS TEMAS DEL CONTENIDO Y HACE ÉNFASIS EN LA RESOLUCIÓN DE PROBLEMAS DE REDES Y SEGURIDAD INFORMÁTICA.',
+  'ROBOTICA': 'EL CONTENIDO ES ACUMULATIVO. CADA DESAFÍO DE OLIMPIADA PUEDE ABARCAR DOS O MÁS TEMAS DEL CONTENIDO Y HACE ÉNFASIS EN EL DISEÑO, ARMADO Y PROGRAMACIÓN DE ROBOTS.',
+  'DISENADORES Y FABRICADORES': 'EL CONTENIDO ES ACUMULATIVO. CADA DESAFÍO DE OLIMPIADA PUEDE ABARCAR DOS O MÁS TEMAS DEL CONTENIDO Y HACE ÉNFASIS EN EL DISEÑO Y LA FABRICACIÓN DIGITAL.'
+}
+
+const LEYENDA_GENERICA = 'EL CONTENIDO ES ACUMULATIVO. CADA PROBLEMA DE OLIMPIADA PUEDE ABARCAR DOS O MÁS TEMAS DEL CONTENIDO Y HACE ÉNFASIS EN EL RAZONAMIENTO Y LA APLICACIÓN DE LOS CONOCIMIENTOS DEL ÁREA.'
+
+function normalizarArea (nombre) {
+  return String(nombre || '')
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')  // quita acentos
+    .replace(/[^A-Z0-9Ñ]+/g, ' ')     // paréntesis, guiones, etc. -> espacio
+    .trim()
+}
+
 export function generarPDFInscripcionMat (opts = {}) {
   const tutor       = opts.tutor || {}
   const colegio     = opts.colegio || {}
   const grado       = opts.grado || ''
   const areaNombre  = String(opts.areaNombre || 'MATEMÁTICA').toUpperCase()
+  // Leyenda del área; se puede forzar una propia pasando opts.leyenda
+  const leyenda     = opts.leyenda || LEYENDAS_POR_AREA[normalizarArea(areaNombre)] || LEYENDA_GENERICA
   // ⬇️ sin tope (imprime todos); si quieres limitar a 10, usa .slice(0, 10)
   const estudiantes = Array.isArray(opts.estudiantes) ? opts.estudiantes : []
 
@@ -23,9 +54,9 @@ export function generarPDFInscripcionMat (opts = {}) {
   // Encabezado principal
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8)
-  doc.text('EL CONTENIDO ES ACUMULATIVO. CADA PROBLEMA DE OLIMPIADA PUEDE ABARCAR DOS O MÁS TEMAS DEL CONTENIDO Y', W / 2, y, { align: 'center' })
-  y += 4
-  doc.text('HACE ÉNFASIS EN RAZONAMIENTO MATEMÁTICO.', W / 2, y, { align: 'center' })
+  const leyendaLineas = doc.splitTextToSize(leyenda, W - L - R)
+  leyendaLineas.forEach((linea, i) => doc.text(linea, W / 2, y + i * 4, { align: 'center' }))
+  y += (leyendaLineas.length - 1) * 4
 
   y += 6
   doc.setFontSize(11)
@@ -213,9 +244,9 @@ export function generarPDFInscripcionMat (opts = {}) {
   doc.text('Lugar y Fecha:', L, y)
   drawUnderlinedField(L + 24, y + 2, W - R - (L + 24))
 
-  // Guardar (nombre de archivo según el área)
+  // Guardar (nombre de archivo según el área, salvo que se indique opts.nombreArchivo)
   const slug = areaNombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_')
-  doc.save(`formulario_olim_${slug}.pdf`)
+  doc.save(opts.nombreArchivo || `formulario_olim_${slug}.pdf`)
 }
 
 export async function generarPDFInscripcion ({
